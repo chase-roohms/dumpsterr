@@ -6,7 +6,7 @@ import config
 import logging
 from pprint import pp
 
-def is_dir_counts_valid(directories_min_files: dict):
+def is_dirs_and_counts_valid(directories_min_files: dict):
     '''
     Check the file counts in directories as specified in the configuration data.
     
@@ -43,10 +43,9 @@ if __name__ == "__main__":
     # Check if directories all are accessible and have minimum file counts
     # Exit if validation fails
     try:
-        if not is_dir_counts_valid(config_data.get('directories-min-files', {})):
+        if not is_dirs_and_counts_valid(config_data.get('directories-min-files', {})):
             quit()
     except Exception as e:
         logger.error(f'An error occurred during directory validation: {e}')
         quit()
     logger.info('All directories are valid and meet the minimum file counts.')
-    
