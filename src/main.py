@@ -49,7 +49,9 @@ if __name__ == "__main__":
     # Check if directories all are accessible and have minimum file counts
     # Exit if validation fails
     try:
-        if not is_dirs_and_counts_valid(config_data.get('directories-min-files', {})):
+        dirs_counts = {path_info['path']: path_info['min_files'] 
+                      for path_info in config_data.get('libraries', [])}
+        if not is_dirs_and_counts_valid(dirs_counts):
             quit()
     except Exception as e:
         logger.error(f'An error occurred during directory validation: {e}')
