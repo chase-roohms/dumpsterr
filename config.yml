@@ -1,0 +1,6 @@
+filepaths-counts:
+  /media/plex/movies: 700
+  /media/plex/tv: 100
+
+settings:
+  log_level: DEBUG
