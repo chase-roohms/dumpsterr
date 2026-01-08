@@ -25,9 +25,9 @@ def is_valid_directory(path: str):
     '''
     try:
         _validate_directory(path)
-        return True
-    except (FileNotFoundError, NotADirectoryError, PermissionError):
-        return False
+        return True, ''
+    except (FileNotFoundError, NotADirectoryError, PermissionError) as e:
+        return False, str(e)
 
 def get_file_counts(directory: str):
     '''
