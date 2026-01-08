@@ -1,7 +1,7 @@
 from .filesystem import (
-    validate_directory
+    get_file_counts
     )
 
 __all__ = [
-    'validate_directory'
+    'get_file_counts'
     ]
