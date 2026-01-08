@@ -2,5 +2,13 @@ directories-min-files:
   data: 1
   src: 1
 
+libraries:
+  - name: TV Shows
+    path: test/demo-data/shows/
+    min_files: 1
+  - name: Movies
+    path: test/demo-data/movies/
+    min_files: 3
+
 settings:
   log_level: DEBUG
