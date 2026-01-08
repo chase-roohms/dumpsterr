@@ -3,13 +3,13 @@
   "title": "Dumpsterr Configuration",
   "description": "Configuration schema for dumpsterr application",
   "type": "object",
-  "required": ["filepaths-counts", "settings"],
+  "required": ["directories-min-files", "settings"],
   "properties": {
-    "filepaths-counts": {
+    "directories-min-files": {
       "type": "object",
       "description": "Mapping of file paths to their expected counts",
       "patternProperties": {
-        "^/.*": {
+        "^.*": {
           "type": "integer",
           "minimum": 0,
           "description": "Expected count of items in this path"
