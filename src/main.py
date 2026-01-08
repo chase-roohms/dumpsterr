@@ -8,9 +8,14 @@ from pprint import pp
 
 def is_dirs_and_counts_valid(directories_min_files: dict):
     '''
-    Check the file counts in directories as specified in the configuration data.
+    Check the validity of directories and the file counts in directories as 
+    specified in the configuration data.
+    - Verify each directory exists and is readable.
+    - Check if the number of files in each directory meets the minimum expected 
+    count.
     
-    :param directories_min_files: Mapping of directory paths to their expected file counts
+    :param directories_min_files: Mapping of directory paths to their expected 
+    file counts
     '''
     for path, min_count in directories_min_files.items():
         is_valid_dir, error = filesystem.is_valid_directory(path)
@@ -25,6 +30,7 @@ def is_dirs_and_counts_valid(directories_min_files: dict):
     return True
 
 if __name__ == "__main__":
+    # Load configuration
     try:
         config_data = config.get_config()
     except Exception as e:
