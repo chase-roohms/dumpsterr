@@ -1,9 +1,12 @@
 # Custom modules
 import filesystem
 import config
+import plex_client
 
 # Standard libraries
 import logging
+import dotenv
+import os
 from pprint import pp
 
 def is_dirs_and_counts_valid(directories_min_files: dict) -> bool:
@@ -29,7 +32,40 @@ def is_dirs_and_counts_valid(directories_min_files: dict) -> bool:
             return False
     return True
 
+def main(config_data: dict, logger: logging.Logger = logging.getLogger(__name__)):
+    # Check if directories all are accessible and have minimum file counts
+    # Exit if validation fails
+    plex = plex_client.PlexClient(
+        base_url = os.getenv('PLEX_URL'),
+        token=os.getenv('PLEX_TOKEN')
+    )
+    sections = plex.get_library_sections()
+    logging.debug(f'Plex library sections: {sections}')
+    try:
+        dirs_counts = {path_info['path']: path_info['min_files'] 
+                      for path_info in config_data.get('libraries', [])}
+        if not is_dirs_and_counts_valid(dirs_counts):
+            quit()
+    except Exception as e:
+        logger.error(f'An error occurred during directory validation: {e}')
+        quit()
+    logger.info('All directories are valid and meet the minimum file counts.')
+    logger.info('Proceeding with Plex library trash emptying...')
+    for library in config_data.get('libraries', []):
+        section_name = library['name']
+        section_key = sections.get(section_name)
+        if section_key:
+            success = plex.empty_section_trash(section_key)
+            if success:
+                logger.info(f'Successfully emptied trash for section "{section_name}".')
+            else:
+                logger.error(f'Failed to empty trash for section "{section_name}".')
+        else:
+            logger.error(f'Section "{section_name}" not found in Plex library sections.')
+
 if __name__ == "__main__":
+    # Load environment variables
+    dotenv.load_dotenv()
     # Load configuration
     try:
         config_data = config.get_config()
@@ -46,14 +82,4 @@ if __name__ == "__main__":
     logger = logging.getLogger(__name__)
     logger.debug(f'Configuration loaded: {config_data}')
 
-    # Check if directories all are accessible and have minimum file counts
-    # Exit if validation fails
-    try:
-        dirs_counts = {path_info['path']: path_info['min_files'] 
-                      for path_info in config_data.get('libraries', [])}
-        if not is_dirs_and_counts_valid(dirs_counts):
-            quit()
-    except Exception as e:
-        logger.error(f'An error occurred during directory validation: {e}')
-        quit()
-    logger.info('All directories are valid and meet the minimum file counts.')
+    main(config_data, logger)
