@@ -1,5 +1,5 @@
 directories-min-files:
-  data: 5
+  data: 1
   src: 1
 
 settings:
