@@ -6,7 +6,7 @@ import config
 import logging
 from pprint import pp
 
-def is_dirs_and_counts_valid(directories_min_files: dict):
+def is_dirs_and_counts_valid(directories_min_files: dict) -> bool:
     '''
     Check the validity of directories and the file counts in directories as 
     specified in the configuration data.

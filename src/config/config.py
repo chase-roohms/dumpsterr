@@ -2,31 +2,35 @@ import yaml
 import jsonschema
 from pprint import pp
 
-def _get_yaml(file_path: str):
+def _get_yaml(file_path: str) -> dict:
     '''
     Load a YAML file and return its contents as a dictionary.
     
     :param file_path: Path to the YAML file
+    :return data: Dictionary containing the YAML file contents
     '''
     with open(file_path, 'r') as file:
         data = yaml.safe_load(file)
     return data
 
-def _validate_schema(config: dict, schema_path: str = 'src/public/config.schema.json'):
+def _validate_schema(config: dict, schema_path: str = 'src/public/config.schema.json') -> None:
     '''
     Validate the configuration data against the JSON schema.
     
     :param config: Configuration data to validate
     :param schema_path: Path to the JSON schema file
+    :raises jsonschema.ValidationError: If the configuration does not conform to the schema
     '''
     schema_data = _get_yaml(schema_path)
     jsonschema.validate(instance=config, schema=schema_data)
 
-def get_config(config_path: str = 'data/config.yml'):
+def get_config(config_path: str = 'data/config.yml') -> dict:
     '''
     Load and validate the configuration file.
     
     :param config_path: Path to the configuration file
+    :return config: Dictionary containing the configuration data
+    :raises jsonschema.ValidationError: If the configuration does not conform to the schema
     '''
     config = _get_yaml(config_path)
     _validate_schema(config)
