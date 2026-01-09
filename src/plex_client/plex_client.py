@@ -5,6 +5,20 @@ from pprint import pp
 
 class PlexClient:
     def __init__(self, base_url, token):
+        """Initialize PlexClient with base URL and authentication token.
+        
+        Args:
+            base_url: The base URL of the Plex server.
+            token: The authentication token for Plex API.
+            
+        Raises:
+            ValueError: If base_url or token is None or empty.
+        """
+        if not base_url:
+            raise ValueError("base_url must be provided and non-empty")
+        if not token:
+            raise ValueError("token must be provided and non-empty")
+            
         self.base_url = base_url
         self.token = token
         self.headers = {
