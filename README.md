@@ -1,7 +1,163 @@
 # dumpsterr
 
-Small python tool to safely empty your trash when storing files on a seperate drive than the plex server is running on
+Automated Plex trash management tool that validates filesystem state before emptying library trash. Prevents accidental deletion when using network-mounted storage.
 
-This is especially useful with NFS mounts to prevent movies / shows from being deleted and re-added from your Plex server when internet or power goes out
+## Problem
 
-When using dumpsterr, ensure you have unchecked "Automatically empty trash after every scan"
+When Plex runs on a different host than your media storage (NFS, SMB, etc.), network interruptions can cause mount failures. If Plex scans while mounts are down, it marks all media as deleted and removes them from your library. Re-mounting triggers a full rescan and metadata rebuild.
+
+## Solution
+
+dumpsterr validates filesystem state before allowing Plex to empty trash:
+- Checks directory accessibility
+- Verifies minimum file counts
+- Confirms file count thresholds match Plex library sizes
+- Only empties trash when all validations pass
+
+## Requirements
+
+- Plex Media Server with API access
+- Docker (or Python 3.12+)
+- Read access to media directories
+
+## Configuration
+
+Create `data/config.yml`:
+
+```yaml
+libraries:
+  - name: Movies                    # Plex library name
+    path: /media/movies/            # Container path to media
+    min_files: 100                  # Minimum files required
+    min_threshold: 90               # Minimum percentage of expected files
+
+  - name: TV Shows
+    path: /media/shows/
+    min_files: 50
+    min_threshold: 90
+
+settings:
+  log_level: INFO                   # DEBUG, INFO, WARNING, ERROR, CRITICAL
+```
+
+Configuration validation:
+- Schema: [src/public/config.schema.yml](src/public/config.schema.yml)
+- Validated on startup using jsonschema
+
+## Docker Setup
+
+### Environment Variables
+
+Required:
+- `PLEX_URL` - Plex server URL (e.g., `http://192.168.1.100:32400`)
+- `PLEX_TOKEN` - [Get your token](https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/)
+
+Optional:
+- `TZ` - Timezone (e.g., `America/New_York`)
+
+### Docker Compose
+
+```yaml
+services:
+  dumpsterr:
+    image: neonvariant/dumpsterr:latest
+    container_name: dumpsterr
+    volumes:
+      - ./config.yml:/app/data/config.yml:ro
+      - /path/to/movies:/media/movies:ro
+      - /path/to/shows:/media/shows:ro
+    environment:
+      - PLEX_URL=http://192.168.1.100:32400
+      - PLEX_TOKEN=your_token_here
+      - TZ=America/New_York
+    restart: unless-stopped
+```
+
+Run:
+```bash
+docker compose up -d
+```
+
+### Docker CLI
+
+```bash
+docker run -d \
+  --name dumpsterr \
+  -v ./config.yml:/app/data/config.yml:ro \
+  -v /path/to/movies:/media/movies:ro \
+  -v /path/to/shows:/media/shows:ro \
+  -e PLEX_URL=http://192.168.1.100:32400 \
+  -e PLEX_TOKEN=your_token_here \
+  -e TZ=America/New_York \
+  --restart unless-stopped \
+  neonvariant/dumpsterr:latest
+```
+
+## Build from Source
+
+```bash
+git clone https://github.com/chase-roohms/dumpsterr.git
+cd dumpsterr
+docker build -t dumpsterr .
+```
+
+## Scheduling
+
+Runs hourly via supercronic (see [src/crontab](src/crontab)). Also executes on container startup.
+
+To modify schedule, edit [src/crontab](src/crontab) and rebuild:
+```bash
+# Current: hourly
+0 * * * * cd /app && /usr/local/bin/python src/main.py
+
+# Example: every 6 hours
+0 */6 * * * cd /app && /usr/local/bin/python src/main.py
+```
+
+## Validation Process
+
+1. Directory accessibility check
+2. Minimum file count verification
+3. Plex library size comparison
+4. Threshold percentage validation (current files / expected files > minimum threshold)
+5. Trash emptying (only if all checks pass)
+
+Validation failure exits without emptying trash.
+
+## Logs
+
+View logs:
+```bash
+docker logs dumpsterr
+docker logs -f dumpsterr  # Follow mode
+```
+
+Log levels: DEBUG, INFO (default), WARNING, ERROR, CRITICAL
+
+## Plex Configuration
+
+Disable "Empty trash automatically after every scan" in:
+- Settings > Library > [Your Library] > Advanced > Scan Library
+
+This lets dumpsterr control trash emptying on its schedule.
+
+## Project Structure
+
+```
+src/
+├── main.py              # Validation and orchestration
+├── config/              # Configuration loading and validation
+├── filesystem/          # Directory and file count checks
+├── plex_client/         # Plex API interaction
+└── public/              # JSON schema for config validation
+```
+
+## Dependencies
+
+- PyYAML
+- jsonschema
+- requests
+
+## License
+
+See LICENSE file.
