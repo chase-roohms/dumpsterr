@@ -112,13 +112,13 @@ def main(config_data: dict, logger: logging.Logger = logging.getLogger(__name__)
                       for path_info in config_data.get('libraries', [])}
     if not is_dirs_valid(list(dirs_counts.keys())):
         logger.error('Directory validation failed. Exiting.')
-        quit()
+        sys.exit(1)
     if not is_dirs_counts_valid(dirs_counts):
         logger.error('Directory file count validation failed. Exiting.')
-        quit()
+        sys.exit(1)
     if not is_dirs_thresholds_valid(dirs_thresholds, path_media_counts):
         logger.error('Directory file count threshold validation failed. Exiting.')
-        quit()
+        sys.exit(1)
     
     logger.info('All directories are valid and meet the minimum file counts.')
     logger.info('Proceeding with Plex library trash emptying...')
@@ -142,7 +142,7 @@ if __name__ == "__main__":
         config_data = config.get_config()
     except Exception as e:
         print(f'Failed to load configuration: {e}')
-        quit()
+        sys.exit(1)
     
     # Configure logging
     log_level = config_data.get('settings', {}).get('log_level', 'INFO')
