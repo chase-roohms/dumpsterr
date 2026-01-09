@@ -9,7 +9,25 @@ import dotenv
 import os
 from pprint import pp
 
-def is_dirs_and_counts_valid(directories_min_files: dict) -> bool:
+default_min_files = 0
+default_min_threshold = 90
+
+def is_dirs_valid(directories: list) -> bool:
+    '''
+    Check the validity of directories as specified in the configuration data.
+    - Verify each directory exists and is readable.
+    
+    :param directories: List of directory paths to validate
+    '''
+    for path in directories:
+        is_valid_dir, error = filesystem.is_valid_directory(path)
+        if not is_valid_dir:
+            logging.error(f'Directory "{path}" is invalid or inaccessible: {error}')
+            return False
+        logging.info(f'Directory "{path}" is valid and accessible.')
+    return True
+
+def is_dirs_counts_valid(directories_min_files: dict) -> bool:
     '''
     Check the validity of directories and the file counts in directories as 
     specified in the configuration data.
@@ -32,6 +50,35 @@ def is_dirs_and_counts_valid(directories_min_files: dict) -> bool:
             return False
     return True
 
+def is_dirs_thresholds_valid(directories_min_thresholds: dict, path_expected_media_counts: dict) -> bool:
+    '''
+    Check the validity of directories and the file count thresholds in 
+    directories as specified in the configuration data.
+    - Verify each directory exists and is readable.
+    - Check if the percentage of files in each directory meets the minimum 
+    threshold.
+    
+    :param directories_min_thresholds: Mapping of directory paths to their expected 
+    file count thresholds (as percentages)
+    '''
+    for path, threshold in directories_min_thresholds.items():
+        is_valid_dir, error = filesystem.is_valid_directory(path)
+        if not is_valid_dir:
+            logging.error(f'Directory "{path}" is invalid or inaccessible: {error}')
+            return False
+        count = filesystem.get_file_counts(path)
+        logging.info(f'Number of files in "{path}": {count}')
+        media_count = path_expected_media_counts[path]
+        logging.info(f'Plex media count for "{path}": {media_count}')
+        # Here you would calculate the actual percentage based on your criteria
+        actual_percentage = (count / media_count * 100) if media_count > 0 else 0
+        logging.info(f'File count percentage for "{path}": {actual_percentage}%')
+        if actual_percentage < threshold:
+            logging.warning(f'File count percentage {actual_percentage}% is below the minimum expected {threshold}% for path "{path}".')
+            return False
+    return True
+
+
 def main(config_data: dict, logger: logging.Logger = logging.getLogger(__name__)):
     # Check if directories all are accessible and have minimum file counts
     # Exit if validation fails
@@ -39,16 +86,37 @@ def main(config_data: dict, logger: logging.Logger = logging.getLogger(__name__)
         base_url = os.getenv('PLEX_URL'),
         token=os.getenv('PLEX_TOKEN')
     )
+    # Set up Plex client and retrieve library sections / media counts
     sections = plex.get_library_sections()
     logging.debug(f'Plex library sections: {sections}')
-    try:
-        dirs_counts = {path_info['path']: path_info.get('min_files', 0) 
+    section_media_counts = dict()
+    path_media_counts = dict()
+    for section, key in sections.items():
+        media_count = plex.get_library_size(key)
+        section_media_counts[section] = media_count
+        logger.info(f'Plex Section: {section}, Size: {media_count}')
+    for library in config_data.get('libraries', []):
+        section_name = library['name']
+        path = library['path']
+        media_count = section_media_counts.get(section_name, 0)
+        path_media_counts[path] = media_count
+    logger.debug(f'Path to media counts: {path_media_counts}')
+
+    
+    dirs_counts = {path_info['path']: path_info.get('min_files', default_min_files) 
                       for path_info in config_data.get('libraries', [])}
-        if not is_dirs_and_counts_valid(dirs_counts):
-            quit()
-    except Exception as e:
-        logger.error(f'An error occurred during directory validation: {e}')
+    dirs_thresholds = {path_info['path']: path_info.get('min_threshold', default_min_threshold) 
+                      for path_info in config_data.get('libraries', [])}
+    if not is_dirs_valid(list(dirs_counts.keys())):
+        logger.error('Directory validation failed. Exiting.')
         quit()
+    if not is_dirs_counts_valid(dirs_counts):
+        logger.error('Directory file count validation failed. Exiting.')
+        quit()
+    if not is_dirs_thresholds_valid(dirs_thresholds, path_media_counts):
+        logger.error('Directory file count threshold validation failed. Exiting.')
+        quit()
+    
     logger.info('All directories are valid and meet the minimum file counts.')
     logger.info('Proceeding with Plex library trash emptying...')
     for library in config_data.get('libraries', []):
