@@ -65,7 +65,7 @@ def main(config_data: dict, logger: logging.Logger = logging.getLogger(__name__)
 
 if __name__ == "__main__":
     # Load environment variables
-    dotenv.load_dotenv()
+    dotenv.load_dotenv('data/.env')
     # Load configuration
     try:
         config_data = config.get_config()
