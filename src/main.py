@@ -7,6 +7,7 @@ from typing import Optional
 
 # Third-party libraries
 import dotenv
+import jsonschema
 
 # Custom modules
 import config
@@ -171,7 +172,7 @@ if __name__ == "__main__":
     # Load configuration
     try:
         config_data = config.get_config()
-    except Exception as e:
+    except (jsonschema.ValidationError, FileNotFoundError, PermissionError) as e:
         print(f'Failed to load configuration: {e}')
         sys.exit(1)
     
