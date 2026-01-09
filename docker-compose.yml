@@ -1,7 +1,7 @@
 services:
   dumpsterr:
     build: .
-    image: dumpsterr:latest
+    image: neonvariant/dumpsterr:latest
     container_name: dumpsterr
     volumes:
       # Mount your config file
