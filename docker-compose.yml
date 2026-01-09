@@ -10,8 +10,6 @@ services:
       # Add more directories as required, ensuring they match those in config.yml
       - /media/plex/movies:/media/movies:ro
       - /media/plex/shows:/media/shows:ro
-      # Mount log directory to persist logs
-      - ./logs:/app/logs
     restart: unless-stopped
     environment:
       - TZ=America/Chicago  # Set your timezone

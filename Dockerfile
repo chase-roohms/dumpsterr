@@ -29,8 +29,8 @@ COPY src/ ./src/
 # Copy config schema
 COPY src/public/ ./src/public/
 
-# Create data and log directories
-RUN mkdir -p /app/data /app/logs && \
+# Create data directory
+RUN mkdir -p /app/data && \
     chown -R dumpsterr:dumpsterr /app
 
 # Copy crontab file

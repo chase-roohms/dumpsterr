@@ -1,2 +1,2 @@
 # Run dumpsterr every hour
-0 * * * * cd /app && /usr/local/bin/python src/main.py >> /app/logs/dumpsterr.log 2>&1
+0 * * * * cd /app && /usr/local/bin/python src/main.py
