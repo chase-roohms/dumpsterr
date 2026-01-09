@@ -34,8 +34,12 @@ RUN crontab /etc/cron.d/dumpsterr-cron
 # Create log file
 RUN touch /var/log/dumpsterr.log
 
+# Copy entrypoint script
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 # Set Python path so imports work correctly
 ENV PYTHONPATH=/app/src
 
-# Run cron in foreground
-CMD ["cron", "-f"]
+# Run entrypoint script (runs app once, then starts cron)
+ENTRYPOINT ["/entrypoint.sh"]
