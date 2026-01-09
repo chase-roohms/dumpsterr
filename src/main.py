@@ -5,7 +5,6 @@ import sys
 from typing import Optional
 
 # Third-party libraries
-import dotenv
 import jsonschema
 
 # Custom modules
@@ -168,8 +167,6 @@ def main(config_data: dict, logger: Optional[logging.Logger] = None) -> None:
             logger.error(f'Section "{section_name}" not found in Plex library sections.')
 
 if __name__ == "__main__":
-    # Load environment variables
-    dotenv.load_dotenv('data/.env')
     # Load configuration
     try:
         config_data = config.get_config()

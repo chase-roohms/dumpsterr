@@ -92,8 +92,6 @@ class PlexClient:
 
 if __name__ == "__main__":
     # Example usage / testing
-    import dotenv
-    dotenv.load_dotenv('data/.env')
     from os import getenv
     
     plex = PlexClient(base_url=getenv('PLEX_URL'), token=getenv('PLEX_TOKEN'))
