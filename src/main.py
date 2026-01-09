@@ -58,10 +58,11 @@ def is_dirs_counts_valid(directories_min_files: dict[str, int]) -> bool:
             logging.error(f'Directory "{path}" is invalid or inaccessible: {error}')
             return False
         count = filesystem.get_file_counts(path)
-        logging.info(f'Number of files in "{path}": {count}')
+        logging.debug(f'Number of files in "{path}": {count}')
         if count < min_count:
             logging.warning(f'File count {count} is below the minimum expected {min_count} for path "{path}".')
             return False
+        logging.info(f'Directory "{path}" meets the minimum file count of {min_count}.')
     return True
 
 
@@ -99,6 +100,7 @@ def is_dirs_thresholds_valid(
         if actual_percentage < threshold:
             logging.warning(f'File count percentage {actual_percentage}% is below the minimum expected {threshold}% for path "{path}".')
             return False
+        logging.info(f'Directory "{path}" meets the minimum file count threshold of {threshold}%.')
     return True
 
 
