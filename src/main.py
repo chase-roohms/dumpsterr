@@ -90,12 +90,12 @@ def is_dirs_thresholds_valid(
             logging.error(f'Directory "{path}" is invalid or inaccessible: {error}')
             return False
         count = filesystem.get_file_counts(path)
-        logging.info(f'Number of files in "{path}": {count}')
+        logging.debug(f'Number of files in "{path}": {count}')
         media_count = path_expected_media_counts[path]
-        logging.info(f'Plex media count for "{path}": {media_count}')
+        logging.debug(f'Plex media count for "{path}": {media_count}')
         # Calculate the actual percentage based on criteria
         actual_percentage = (count / media_count * 100) if media_count > 0 else 0
-        logging.info(f'File count percentage for "{path}": {actual_percentage}%')
+        logging.debug(f'File count percentage for "{path}": {actual_percentage}%')
         if actual_percentage < threshold:
             logging.warning(f'File count percentage {actual_percentage}% is below the minimum expected {threshold}% for path "{path}".')
             return False
