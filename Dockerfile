@@ -41,5 +41,8 @@ RUN chmod +x /entrypoint.sh
 # Set Python path so imports work correctly
 ENV PYTHONPATH=/app/src
 
+# Disable Python output buffering
+ENV PYTHONUNBUFFERED=1
+
 # Run entrypoint script (runs app once, then starts cron)
 ENTRYPOINT ["/entrypoint.sh"]
