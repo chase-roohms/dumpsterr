@@ -141,6 +141,37 @@ docker logs -f dumpsterr  # Follow mode
 
 Log levels: DEBUG, INFO (default), WARNING, ERROR, CRITICAL
 
+## Troubleshooting
+
+### IsADirectoryError: Config file is a directory
+
+**Error**: `IsADirectoryError: [Errno 21] Is a directory: 'data/config.yml'`
+
+**Cause**: The config file doesn't exist on your host system. When Docker tries to mount a non-existent file, it creates a directory instead.
+
+**Solution**:
+1. Ensure the config file exists on your host at the path specified in your `docker-compose.yml`
+2. If using the quickstart, the config file should be in the same directory as your `docker-compose.yml`
+3. Recreate the container to remount the volume correctly:
+   ```bash
+   docker compose down
+   docker compose up -d
+   ```
+
+**Example**: If your docker-compose.yml has:
+```yaml
+volumes:
+  - ./config.yml:/app/data/config.yml:ro
+```
+Then `config.yml` must exist in the same directory as `docker-compose.yml` before running `docker compose up`.
+
+### Container starts but nothing happens
+
+Check that:
+- `PLEX_URL` is accessible from the container
+- `PLEX_TOKEN` is valid
+- Media paths in `config.yml` match the container paths (not host paths)
+
 ## Plex Configuration
 
 Disable "Empty trash automatically after every scan" in:

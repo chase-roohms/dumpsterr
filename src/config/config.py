@@ -1,5 +1,6 @@
 import yaml
 import jsonschema
+import os
 from pprint import pp
 
 def _get_yaml(file_path: str) -> dict:
@@ -11,6 +12,21 @@ def _get_yaml(file_path: str) -> dict:
     Returns:
         Dictionary containing the YAML file contents.
     """
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(
+            f"Configuration file not found: {file_path}\n"
+            f"If running in Docker, ensure the config file exists on the host before starting the container."
+        )
+    
+    if os.path.isdir(file_path):
+        raise IsADirectoryError(
+            f"Expected a file but found a directory: {file_path}\n"
+            f"This usually means the config file doesn't exist on the host system.\n"
+            f"Docker created a directory instead when mounting the volume.\n"
+            f"Solution: Create the config file on your host at the source path specified in your docker-compose.yml,\n"
+            f"then recreate the container with 'docker compose down && docker compose up -d'"
+        )
+    
     with open(file_path, 'r') as file:
         data = yaml.safe_load(file)
     return data

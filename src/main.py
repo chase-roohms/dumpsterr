@@ -170,7 +170,7 @@ if __name__ == "__main__":
     # Load configuration
     try:
         config_data = config.get_config()
-    except (jsonschema.ValidationError, FileNotFoundError, PermissionError) as e:
+    except (jsonschema.ValidationError, FileNotFoundError, PermissionError, IsADirectoryError) as e:
         print(f'Failed to load configuration: {e}')
         sys.exit(1)
     
