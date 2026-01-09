@@ -1,18 +1,17 @@
 services:
   dumpsterr:
-    build: .
     image: neonvariant/dumpsterr:latest
     container_name: dumpsterr
     volumes:
       # Mount your config file
-      - ./data/config.yml:/app/data/config.yml:ro
+      - ./config.yml:/app/data/config.yml:ro
       # Mount your media directories (adjust paths as needed)
       # Add more directories as required, ensuring they match those in config.yml
       - /media/plex/movies:/media/movies:ro
       - /media/plex/shows:/media/shows:ro
     restart: unless-stopped
     environment:
-      - TZ=America/Chicago  # Set your timezone
+      - TZ=${TZ}  # Set your timezone
       - PLEX_URL=${PLEX_URL}  # Change to your Plex server URL
       - PLEX_TOKEN=${PLEX_TOKEN}  # Get from https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/
 
