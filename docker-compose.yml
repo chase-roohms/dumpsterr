@@ -8,8 +8,8 @@ services:
       - ./data/config.yml:/app/data/config.yml:ro
       # Mount your media directories (adjust paths as needed)
       # Add more directories as required, ensuring they match those in config.yml
-      - /path/to/your/movies:/media/movies:ro
-      - /path/to/your/shows:/media/shows:ro
+      - /media/plex/movies:/media/movies:ro
+      - /media/plex/shows:/media/shows:ro
       # Mount log file to access cron logs
       - dumpsterr-logs:/var/log
     restart: unless-stopped
