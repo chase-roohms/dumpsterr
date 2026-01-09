@@ -1,7 +1,3 @@
-directories-min-files:
-  data: 1
-  src: 1
-
 libraries:
   - name: TV Shows
     path: test/demo-data/shows/
