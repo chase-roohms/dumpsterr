@@ -2,7 +2,6 @@
 import logging
 import os
 import sys
-from pprint import pp
 from typing import Optional
 
 # Third-party libraries
