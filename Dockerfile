@@ -7,6 +7,10 @@ WORKDIR /app
 # Install cron
 RUN apt-get update && apt-get install -y cron && rm -rf /var/lib/apt/lists/*
 
+# Create non-root user
+RUN groupadd -g 1000 dumpsterr && \
+    useradd -u 1000 -g 1000 -m -s /bin/bash dumpsterr
+
 # Copy requirements first for better caching
 COPY requirements.txt .
 
@@ -24,15 +28,19 @@ RUN mkdir -p /app/data
 
 # Copy crontab file
 COPY crontab /etc/cron.d/dumpsterr-cron
+Create log file with proper permissions
+RUN touch /var/log/dumpsterr.log && \
+    chown dumpsterr:dumpsterr /var/log/dumpsterr.log
 
-# Give execution rights on the cron job
-RUN chmod 0644 /etc/cron.d/dumpsterr-cron
+# Copy entrypoint script
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
-# Apply cron job
-RUN crontab /etc/cron.d/dumpsterr-cron
+# Set ownership of app directory
+RUN chown -R dumpsterr:dumpsterr /app
 
-# Create log file
-RUN touch /var/log/dumpsterr.log
+# Switch to non-root user
+USER dumpsterrr.log
 
 # Copy entrypoint script
 COPY entrypoint.sh /entrypoint.sh

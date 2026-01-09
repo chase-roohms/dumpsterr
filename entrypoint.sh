@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Load crontab for current user
+crontab /etc/cron.d/dumpsterr-cron
+
 # Run dumpsterr immediately on startup
 echo "Running dumpsterr on startup..." 2>&1
 cd /app
@@ -13,4 +16,4 @@ fi
 
 # Start cron in foreground
 echo "Starting cron scheduler..." 2>&1
-cron -f
+exec cron -f
