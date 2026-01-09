@@ -12,8 +12,8 @@ import config
 import filesystem
 import plex_client
 
-default_min_files = 0
-default_min_threshold = 90
+DEFAULT_MIN_FILES = 0
+DEFAULT_MIN_THRESHOLD = 90
 
 def is_dirs_valid(directories: list) -> bool:
     '''
@@ -106,9 +106,9 @@ def main(config_data: dict, logger: logging.Logger = logging.getLogger(__name__)
     logger.debug(f'Path to media counts: {path_media_counts}')
 
     
-    dirs_counts = {path_info['path']: path_info.get('min_files', default_min_files) 
+    dirs_counts = {path_info['path']: path_info.get('min_files', DEFAULT_MIN_FILES) 
                       for path_info in config_data.get('libraries', [])}
-    dirs_thresholds = {path_info['path']: path_info.get('min_threshold', default_min_threshold) 
+    dirs_thresholds = {path_info['path']: path_info.get('min_threshold', DEFAULT_MIN_THRESHOLD) 
                       for path_info in config_data.get('libraries', [])}
     if not is_dirs_valid(list(dirs_counts.keys())):
         logger.error('Directory validation failed. Exiting.')
