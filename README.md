@@ -76,10 +76,17 @@ services:
       - /path/to/movies:/media/movies:ro
       - /path/to/shows:/media/shows:ro
     environment:
-      - PLEX_URL=http://192.168.1.100:32400
-      - PLEX_TOKEN=your_token_here
-      - TZ=America/New_York
+      - PLEX_URL=${PLEX_URL}
+      - PLEX_TOKEN=${PLEX_TOKEN}
+      - TZ=${TZ}
     restart: unless-stopped
+```
+
+.env
+```shell
+PLEX_URL=http://<IP>:<PORT>
+PLEX_TOKEN=PLEX-TOKEN-HERE
+TZ=Time/Zone
 ```
 
 Run:
