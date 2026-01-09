@@ -1,0 +1,48 @@
+$schema: http://json-schema.org/draft-07/schema#
+type: object
+required:
+  - libraries
+properties:
+  libraries:
+    type: array
+    description: List of Plex libraries to monitor
+    items:
+      type: object
+      required:
+        - name
+        - path
+      properties:
+        name:
+          type: string
+          description: Name of the library on Plex
+        path:
+          type: string
+          description: Path to the directory in the container
+        min_files:
+          type: integer
+          description: Minimum number of files expected in this directory
+          default: 0
+          minimum: 0
+        min_threshold:
+          type: integer
+          description: Percentage of files that must be present to consider the directory valid
+          default: 90
+          minimum: 0
+          maximum: 100
+      additionalProperties: false
+  settings:
+    type: object
+    description: Application settings
+    properties:
+      log_level:
+        type: string
+        description: Logging level
+        enum:
+          - DEBUG
+          - INFO
+          - WARNING
+          - ERROR
+          - CRITICAL
+        default: INFO
+    additionalProperties: false
+additionalProperties: false

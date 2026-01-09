@@ -15,7 +15,7 @@ def _get_yaml(file_path: str) -> dict:
         data = yaml.safe_load(file)
     return data
 
-def _validate_schema(config: dict, schema_path: str = 'src/public/config.schema.json') -> None:
+def _validate_schema(config: dict, schema_path: str = 'src/public/config.schema.yml') -> None:
     """Validate the configuration data against the JSON schema.
     
     Args:
