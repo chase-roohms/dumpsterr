@@ -28,7 +28,11 @@ RUN mkdir -p /app/data
 
 # Copy crontab file
 COPY crontab /etc/cron.d/dumpsterr-cron
-Create log file with proper permissions
+
+# Give execution rights on the cron job
+RUN chmod 0644 /etc/cron.d/dumpsterr-cron
+
+# Create log file with proper permissions
 RUN touch /var/log/dumpsterr.log && \
     chown dumpsterr:dumpsterr /var/log/dumpsterr.log
 
@@ -40,11 +44,7 @@ RUN chmod +x /entrypoint.sh
 RUN chown -R dumpsterr:dumpsterr /app
 
 # Switch to non-root user
-USER dumpsterrr.log
-
-# Copy entrypoint script
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+USER dumpsterr
 
 # Set Python path so imports work correctly
 ENV PYTHONPATH=/app/src
