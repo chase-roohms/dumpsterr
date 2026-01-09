@@ -2,6 +2,13 @@
 
 Automated Plex trash management tool that validates filesystem state before emptying library trash. Prevents accidental deletion when using network-mounted storage.
 
+# Quickstart
+```bash
+mkdir dumpsterr && cd dumpsterr
+curl -fsSL https://raw.githubusercontent.com/chase-roohms/dumpsterr/refs/heads/main/docker-compose/quickstart.sh | bash
+# Edit config.yml and .env
+docker compose up -d
+```
 ## Problem
 
 When Plex runs on a different host than your media storage (NFS, SMB, etc.), network interruptions can cause mount failures. If Plex scans while mounts are down, it marks all media as deleted and removes them from your library. Re-mounting triggers a full rescan and metadata rebuild.
