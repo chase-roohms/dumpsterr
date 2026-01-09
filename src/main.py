@@ -1,13 +1,16 @@
-# Custom modules
-import filesystem
-import config
-import plex_client
-
 # Standard libraries
 import logging
-import dotenv
 import os
+import sys
 from pprint import pp
+
+# Third-party libraries
+import dotenv
+
+# Custom modules
+import config
+import filesystem
+import plex_client
 
 default_min_files = 0
 default_min_threshold = 90
