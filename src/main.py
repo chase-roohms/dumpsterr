@@ -105,11 +105,14 @@ def main(config_data: dict, logger: logging.Logger = logging.getLogger(__name__)
         path_media_counts[path] = media_count
     logger.debug(f'Path to media counts: {path_media_counts}')
 
+    # Build directory validation dictionaries in a single iteration
+    dirs_counts = {}
+    dirs_thresholds = {}
+    for path_info in config_data.get('libraries', []):
+        path = path_info['path']
+        dirs_counts[path] = path_info.get('min_files', DEFAULT_MIN_FILES)
+        dirs_thresholds[path] = path_info.get('min_threshold', DEFAULT_MIN_THRESHOLD)
     
-    dirs_counts = {path_info['path']: path_info.get('min_files', DEFAULT_MIN_FILES) 
-                      for path_info in config_data.get('libraries', [])}
-    dirs_thresholds = {path_info['path']: path_info.get('min_threshold', DEFAULT_MIN_THRESHOLD) 
-                      for path_info in config_data.get('libraries', [])}
     if not is_dirs_valid(list(dirs_counts.keys())):
         logger.error('Directory validation failed. Exiting.')
         sys.exit(1)
