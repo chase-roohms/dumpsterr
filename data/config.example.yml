@@ -1,10 +1,10 @@
 libraries:
   - name: TV Shows
     path: test/demo-data/shows/
-    min_files: 1
+    min_files: 2 # Reccomended set to 50% of your total files
   - name: Movies
     path: test/demo-data/movies/
-    min_files: 3
+    min_files: 2 # Reccomended set to 50% of your total files
 
 settings:
   log_level: DEBUG
