@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+
+# Git
+.git/
+.gitignore
+
+# Test data (mount as volume instead)
+test/
+
+# Config files (mount as volume instead)
+data/config.yml
+
+# OS
+.DS_Store
+Thumbs.db
