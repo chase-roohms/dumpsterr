@@ -1,19 +1,16 @@
 #!/bin/bash
 
-# Load crontab for current user
-crontab /etc/cron.d/dumpsterr-cron
-
 # Run dumpsterr immediately on startup
-echo "Running dumpsterr on startup..." 2>&1
+echo "Running dumpsterr on startup..."
 cd /app
 
-if /usr/local/bin/python -u src/main.py 2>&1 | tee -a /var/log/dumpsterr.log; then
-    echo "Startup run completed successfully" 2>&1
+if /usr/local/bin/python -u src/main.py 2>&1 | tee -a /app/logs/dumpsterr.log; then
+    echo "Startup run completed successfully"
 else
-    echo "ERROR: Startup run failed with exit code $?" 2>&1
-    echo "Check logs above for details" 2>&1
+    echo "ERROR: Startup run failed with exit code $?"
+    echo "Check logs above for details"
 fi
 
-# Start cron in foreground
-echo "Starting cron scheduler..." 2>&1
-exec cron -f
+# Start supercronic in foreground (handles scheduling)
+echo "Starting cron scheduler..."
+exec /usr/local/bin/supercronic /app/crontab

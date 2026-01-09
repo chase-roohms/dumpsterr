@@ -10,13 +10,11 @@ services:
       # Add more directories as required, ensuring they match those in config.yml
       - /media/plex/movies:/media/movies:ro
       - /media/plex/shows:/media/shows:ro
-      # Mount log file to access cron logs
-      - dumpsterr-logs:/var/log
+      # Mount log directory to persist logs
+      - ./logs:/app/logs
     restart: unless-stopped
     environment:
       - TZ=America/Chicago  # Set your timezone
       - PLEX_URL=${PLEX_URL}  # Change to your Plex server URL
       - PLEX_TOKEN=${PLEX_TOKEN}  # Get from https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/
 
-volumes:
-  dumpsterr-logs:

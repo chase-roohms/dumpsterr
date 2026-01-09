@@ -4,8 +4,14 @@ FROM python:3.12-slim
 # Set working directory
 WORKDIR /app
 
-# Install cron
-RUN apt-get update && apt-get install -y cron && rm -rf /var/lib/apt/lists/*
+# Install supercronic (cron for containers)
+RUN apt-get update && \
+    apt-get install -y wget && \
+    wget -q https://github.com/aptible/supercronic/releases/download/v0.2.29/supercronic-linux-amd64 -O /usr/local/bin/supercronic && \
+    chmod +x /usr/local/bin/supercronic && \
+    apt-get remove -y wget && \
+    apt-get autoremove -y && \
+    rm -rf /var/lib/apt/lists/*
 
 # Create non-root user
 RUN groupadd -g 1000 dumpsterr && \
@@ -23,25 +29,18 @@ COPY src/ ./src/
 # Copy config schema
 COPY src/public/ ./src/public/
 
-# Create data directory for config
-RUN mkdir -p /app/data
+# Create data and log directories
+RUN mkdir -p /app/data /app/logs && \
+    chown -R dumpsterr:dumpsterr /app
 
 # Copy crontab file
-COPY crontab /etc/cron.d/dumpsterr-cron
-
-# Give execution rights on the cron job
-RUN chmod 0644 /etc/cron.d/dumpsterr-cron
-
-# Create log file with proper permissions
-RUN touch /var/log/dumpsterr.log && \
-    chown dumpsterr:dumpsterr /var/log/dumpsterr.log
+COPY crontab /app/crontab
+RUN chown dumpsterr:dumpsterr /app/crontab
 
 # Copy entrypoint script
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-
-# Set ownership of app directory
-RUN chown -R dumpsterr:dumpsterr /app
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh && \
+    chown dumpsterr:dumpsterr /app/entrypoint.sh
 
 # Switch to non-root user
 USER dumpsterr
@@ -52,5 +51,8 @@ ENV PYTHONPATH=/app/src
 # Disable Python output buffering
 ENV PYTHONUNBUFFERED=1
 
+# Force Python to write logs to stdout/stderr immediately
+ENV PYTHONIOENCODING=utf-8
+
 # Run entrypoint script (runs app once, then starts cron)
-ENTRYPOINT ["/entrypoint.sh"]
+CMD ["/bin/bash", "/app/entrypoint.sh"]
