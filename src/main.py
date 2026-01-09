@@ -42,7 +42,7 @@ def main(config_data: dict, logger: logging.Logger = logging.getLogger(__name__)
     sections = plex.get_library_sections()
     logging.debug(f'Plex library sections: {sections}')
     try:
-        dirs_counts = {path_info['path']: path_info['min_files'] 
+        dirs_counts = {path_info['path']: path_info.get('min_files', 0) 
                       for path_info in config_data.get('libraries', [])}
         if not is_dirs_and_counts_valid(dirs_counts):
             quit()
