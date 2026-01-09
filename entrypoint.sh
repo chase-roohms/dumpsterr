@@ -11,5 +11,6 @@ else
 fi
 
 # Start supercronic in foreground (handles scheduling)
+# Use -passthrough-logs to prevent wrapping each log line with cron metadata
 echo "Starting cron scheduler..."
-exec /usr/local/bin/supercronic /app/crontab
+exec /usr/local/bin/supercronic -passthrough-logs /app/crontab
