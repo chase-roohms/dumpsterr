@@ -34,7 +34,7 @@ RUN mkdir -p /app/data && \
     chown -R dumpsterr:dumpsterr /app
 
 # Copy crontab file
-COPY crontab /app/crontab
+COPY src/crontab /app/crontab
 RUN chown dumpsterr:dumpsterr /app/crontab
 
 # Copy entrypoint script
