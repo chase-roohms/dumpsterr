@@ -43,7 +43,7 @@ def get_file_counts(directory: str) -> int:
     '''
     _validate_directory(directory)
     dir_path = Path(directory)
-    return len([f for f in dir_path.iterdir() if f.is_file()])
+    return len([f for f in dir_path.iterdir()])
 
 if __name__ == "__main__":
     # Example usage / testing
