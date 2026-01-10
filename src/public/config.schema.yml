@@ -16,8 +16,12 @@ properties:
           type: string
           description: Name of the library on Plex
         path:
-          type: string
-          description: Path to the directory in the container
+          description: Path to the directory in the container (single path or array of paths)
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                type: string
         min_files:
           type: integer
           description: Minimum number of files expected in this directory
