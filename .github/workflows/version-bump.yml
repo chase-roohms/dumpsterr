@@ -15,6 +15,8 @@ on:
 jobs:
   bump-version:
     runs-on: ubuntu-latest
+    outputs:
+      new_version: ${{ steps.new_version.outputs.version }}
     permissions:
       contents: write
     
@@ -81,3 +83,10 @@ jobs:
               prerelease: false
             });
             console.log(`Created release: ${release.html_url}`);
+
+  build-docker:
+    needs: bump-version
+    uses: ./.github/workflows/docker-release.yml
+    with:
+      version: ${{ needs.bump-version.outputs.new_version }}
+    secrets: inherit
