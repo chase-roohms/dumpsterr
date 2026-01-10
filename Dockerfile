@@ -1,4 +1,8 @@
 # Use Python 3.12 slim image as base
+# Known vulnerability: CVE-2025-45582 (MEDIUM) in Debian tar package (>=1.35+dfsg-3.1)
+# - No fixed version available as of 2026-01-09
+# - EPSS score: 0.00049 (0.15% exploitation probability)
+# - Risk accepted: Application does not directly use tar functionality
 FROM python:3.12-slim
 
 # Set working directory
@@ -26,6 +30,9 @@ RUN groupadd -g 1000 dumpsterr && \
 
 # Copy requirements first for better caching
 COPY requirements.txt .
+
+# Upgrade pip to fix CVE-2025-8869
+RUN pip install --no-cache-dir --upgrade "pip>=25.3"
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
