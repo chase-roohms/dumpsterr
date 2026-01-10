@@ -41,7 +41,9 @@ libraries:
     min_threshold: 90               # Minimum percentage of expected files
 
   - name: TV Shows
-    path: /media/shows/
+    path: 
+      - /media/shows/
+      - /media/more-shows/
     min_files: 50
     min_threshold: 90
 
