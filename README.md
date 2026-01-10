@@ -13,13 +13,15 @@ docker compose up -d
 
 When Plex runs on a different host than your media storage (NFS, SMB, etc.), network interruptions can cause mount failures. If Plex scans while mounts are down, it marks all media as deleted and removes them from your library. Re-mounting triggers a full rescan and metadata rebuild.
 
+Plex's "fix" for this is to disable "Empty trash automatically after every scan" - which then means you have to periodically empty your trash manually to avoid all the little red trash symbols on **intentionally deleted** media, and the scary red "unavailable" buttons on upgraded files.
+
 ## Solution
 
 dumpsterr validates filesystem state before allowing Plex to empty trash:
 - Checks directory accessibility
 - Verifies minimum file counts
-- Confirms file count thresholds match Plex library sizes
-- Only empties trash when all validations pass
+- Confirms file count thresholds are within an acceptable range: `if (files on disk / media in library) > minimum threshold in config`
+- Only empties trash when **all** validations pass
 
 ## Requirements
 
@@ -74,10 +76,17 @@ services:
       - /path/to/movies:/media/movies:ro
       - /path/to/shows:/media/shows:ro
     environment:
-      - PLEX_URL=http://192.168.1.100:32400
-      - PLEX_TOKEN=your_token_here
-      - TZ=America/New_York
+      - PLEX_URL=${PLEX_URL}
+      - PLEX_TOKEN=${PLEX_TOKEN}
+      - TZ=${TZ}
     restart: unless-stopped
+```
+
+.env
+```shell
+PLEX_URL=http://<IP>:<PORT>
+PLEX_TOKEN=PLEX-TOKEN-HERE
+TZ=Time/Zone
 ```
 
 Run:
@@ -175,7 +184,7 @@ Check that:
 ## Plex Configuration
 
 Disable "Empty trash automatically after every scan" in:
-- Settings > Library > [Your Library] > Advanced > Scan Library
+- Settings > Library
 
 This lets dumpsterr control trash emptying on its schedule.
 
