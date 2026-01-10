@@ -12,14 +12,14 @@ on:
           - minor
           - major
 
+permissions:
+  contents: write
+
 jobs:
   bump-version:
     runs-on: ubuntu-latest
     outputs:
       new_version: ${{ steps.new_version.outputs.version }}
-    permissions:
-      contents: write
-    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
