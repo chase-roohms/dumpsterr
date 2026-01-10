@@ -34,3 +34,17 @@ jobs:
           tags: ${{ env.IMAGE_NAME }}:main
           cache-from: type=gha
           cache-to: type=gha,mode=max
+      
+      - name: Docker Scout Scan
+        uses: docker/scout-action@v1
+        with:
+          image: ${{ env.IMAGE_NAME }}:main
+          command: cves
+          sarif-file: sarif.output.json
+          summary: true
+
+      - name: Upload SARIF result
+        id: upload-sarif
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: sarif.output.json
