@@ -10,7 +10,9 @@ libraries:
     min_threshold: 90 # Defaults to 90
 
   - name: Movies # Name of the library on Plex
-    path: /media/movies/ # Path to the directory on the filesystem
+    path: 
+      - /media/movies/ # Path to the directory on the filesystem
+      - /extras/movies/ # Additional path example
     
     # Minimum number of files expected in this directory
     min_files: 2 # Defaults to 0
