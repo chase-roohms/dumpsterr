@@ -50,7 +50,7 @@ def is_dirs_valid(directories: list[str]) -> bool:
         if not is_valid_dir:
             logging.error(f'Directory "{path}" is invalid or inaccessible: {error}')
             return False
-        logging.info(f'Directory "{path}" is valid and accessible.')
+        logging.debug(f'Directory "{path}" is valid and accessible.')
     return True
 
 
@@ -94,6 +94,41 @@ def get_section_file_counts(all_media_info: list[dict]) -> dict[str, int]:
         section_file_counts[section_name] = file_counts
     return section_file_counts
 
+def process_library(plex: plex_client.PlexClient, library: dict) -> bool:
+    # All valid directories and are accessible
+    if not is_dirs_valid(library['path']):
+        logging.error(f'One or more directories for library "{library["name"]}" are invalid or inaccessible.')
+        return False
+    logging.info(f'All directories for library "{library["name"]}" are valid and accessible.')
+    # Minimum file counts
+    if library.get('file_count', -1) < library.get('min_files', DEFAULT_MIN_FILES):
+        logging.error(f'File counts for library "{library["name"]}" are not met (actual {library.get("file_count", -1)}, minimum {library.get("min_files", DEFAULT_MIN_FILES)}).')
+        return False
+    logging.info(f'File counts for library "{library["name"]}" are met (actual {library.get("file_count", -1)}, minimum {library.get("min_files", DEFAULT_MIN_FILES)}).')
+    # Minimum file count thresholds
+    expected_media_count = library.get('media_count', 0)
+    actual_file_count = library.get('file_count', 0)
+    min_threshold = library.get('min_threshold', DEFAULT_MIN_THRESHOLD)
+    actual_percentage = (actual_file_count / expected_media_count * 100) if expected_media_count > 0 else 0
+    if actual_percentage < min_threshold:
+        logging.error(f'File count thresholds for library "{library["name"]}" are not met (actual {actual_percentage:.2f}%, minimum {min_threshold}%).')
+        return False
+    logging.info(f'File count thresholds for library "{library["name"]}" are met (actual {actual_percentage:.2f}%, minimum {min_threshold}%).')
+    logging.info(f'All validation checks passed for library "{library["name"]}". Emptying trash...')
+    section_name = library['name']
+    section_key = library['section_key']
+    if section_key:
+        success = plex.empty_section_trash(section_key)
+        if success:
+            logging.info(f'Successfully emptied trash for section "{section_name}".')
+        else:
+            logging.error(f'Failed to empty trash for section "{section_name}".')
+            return False
+    else:
+        logging.error(f'Section "{section_name}" not found in Plex library sections.')
+        return False
+    return True # Successfully processed library
+
 
 def main(config_data: dict, logger: Optional[logging.Logger] = None) -> None:
     """Main function to validate directories and empty Plex trash.
@@ -131,40 +166,12 @@ def main(config_data: dict, logger: Optional[logging.Logger] = None) -> None:
     for library in all_media_info:
         library['file_count'] = section_file_counts.get(library['name'], 0)
         library['media_count'] = section_media_counts.get(library['name'], 0)
-    logging.debug(f'All media info with counts: {all_media_info}')
-
-    # Validate each library's directories, minimum file counts, and thresholds
-    for library in all_media_info:
-        # All valid directories and are accessible
-        if not is_dirs_valid(library['path']):
-            logger.error(f'One or more directories for library "{library["name"]}" are invalid or inaccessible.')
-            sys.exit(1)
-        # Minimum file counts
-        if library.get('file_count', -1) < library.get('min_files', DEFAULT_MIN_FILES):
-            logger.error(f'File counts for library "{library["name"]}" do not meet the minimum required of {library.get("min_files", DEFAULT_MIN_FILES)}.')
-            sys.exit(1)
-        # Minimum file count thresholds
-        expected_media_count = library.get('media_count', 0)
-        actual_file_count = library.get('file_count', 0)
-        min_threshold = library.get('min_threshold', DEFAULT_MIN_THRESHOLD)
-        actual_percentage = (actual_file_count / expected_media_count * 100) if expected_media_count > 0 else 0
-        if actual_percentage < min_threshold:
-            logger.error(f'File count thresholds for library "{library["name"]}" are not met (minimum {min_threshold}%).')
-            sys.exit(1)
-    
-    logger.info('All directories are valid and meet the minimum file counts.')
-    logger.info('Proceeding with Plex library trash emptying...')
-    for library in config_data.get('libraries', []):
-        section_name = library['name']
-        section_key = sections.get(section_name)
-        if section_key:
-            success = plex.empty_section_trash(section_key)
-            if success:
-                logger.info(f'Successfully emptied trash for section "{section_name}".')
-            else:
-                logger.error(f'Failed to empty trash for section "{section_name}".')
+        library['section_key'] = sections.get(library['name'])
+        if process_library(plex, library):
+            logging.info(f'Library "{library["name"]}" processed successfully.')
         else:
-            logger.error(f'Section "{section_name}" not found in Plex library sections.')
+            logging.error(f'Library "{library["name"]}" processing failed.')
+
 
 if __name__ == "__main__":
     # Load configuration
