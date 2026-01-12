@@ -10,6 +10,13 @@ else
     echo "ERROR: Startup run failed with exit code $?"
 fi
 
+# Set default cron schedule if not provided (every hour at minute 0)
+CRON_SCHEDULE="${CRON_SCHEDULE:-0 * * * *}"
+echo "Using cron schedule: '$CRON_SCHEDULE'"
+
+# Write the cron schedule to the crontab file
+echo "$CRON_SCHEDULE cd /app && /usr/local/bin/python src/main.py" > /app/crontab
+
 # Start supercronic in foreground (handles scheduling)
 # Use -passthrough-logs to prevent wrapping each log line with cron metadata
 echo "Starting cron scheduler..."
