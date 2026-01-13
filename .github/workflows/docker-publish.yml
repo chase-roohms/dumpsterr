@@ -4,6 +4,13 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'Dockerfile'
+      - 'entrypoint.sh'
+      - 'requirements.txt'
+      - 'src/**'
+      - 'data/**'
+      - 'docker-compose/**'
 
 env:
   IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/dumpsterr
