@@ -52,9 +52,9 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ${{ env.IMAGE_NAME }}:latest
             ${{ env.IMAGE_NAME }}:v${{ steps.version.outputs.full }}
             ${{ env.IMAGE_NAME }}:v${{ steps.version.outputs.major }}.${{ steps.version.outputs.minor }}
             ${{ env.IMAGE_NAME }}:v${{ steps.version.outputs.major }}
+            ${{ env.IMAGE_NAME }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max

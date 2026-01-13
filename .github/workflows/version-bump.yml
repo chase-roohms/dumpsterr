@@ -19,70 +19,17 @@ jobs:
   bump-version:
     runs-on: ubuntu-latest
     outputs:
-      new_version: ${{ steps.new_version.outputs.version }}
+      new_version: ${{ steps.release.outputs.new_version }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Get latest tag
-        id: get_tag
-        run: |
-          # Get the latest tag, or default to v0.0.0 if none exists
-          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
-          echo "latest=$LATEST_TAG" >> $GITHUB_OUTPUT
-          
-          # Remove 'v' prefix for calculations
-          VERSION=${LATEST_TAG#v}
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-
-      - name: Calculate new version
-        id: new_version
-        run: |
-          VERSION=${{ steps.get_tag.outputs.version }}
-          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
-          
-          case "${{ github.event.inputs.bump_type }}" in
-            major)
-              MAJOR=$((MAJOR + 1))
-              MINOR=0
-              PATCH=0
-              ;;
-            minor)
-              MINOR=$((MINOR + 1))
-              PATCH=0
-              ;;
-            patch)
-              PATCH=$((PATCH + 1))
-              ;;
-          esac
-          
-          NEW_VERSION="v${MAJOR}.${MINOR}.${PATCH}"
-          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
-          echo "New version will be: $NEW_VERSION"
-
-      - name: Create and push tag
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag -a ${{ steps.new_version.outputs.version }} -m "Release ${{ steps.new_version.outputs.version }}"
-          git push origin ${{ steps.new_version.outputs.version }}
-
-      - name: Create GitHub Release
-        uses: actions/github-script@v7
+      - id: release
+        uses: chase-roohms/tag-and-release@v1
         with:
-          script: |
-            const { data: release } = await github.rest.repos.createRelease({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              tag_name: '${{ steps.new_version.outputs.version }}',
-              name: '${{ steps.new_version.outputs.version }}',
-              draft: false,
-              prerelease: false,
-              generate_release_notes: true
-            });
-            console.log(`Created release: ${release.html_url}`);
+          version_bump: ${{ github.event.inputs.bump_type }}
 
   build-docker:
     needs: bump-version
