@@ -134,12 +134,15 @@ def process_library(plex: plex_client.PlexClient, library: dict, logger: logging
     return True # Successfully processed library
 
 
-def main(config_data: dict, logger: Optional[logging.Logger] = None) -> None:
+def main(config_data: dict, logger: Optional[logging.Logger] = None) -> int:
     """Main function to validate directories and empty Plex trash.
     
     Args:
         config_data: Configuration dictionary loaded from config file.
         logger: Logger instance for logging messages. If None, uses root logger.
+        
+    Returns:
+        Exit code: 0 for success, 1 for partial failures, 2 for complete failure.
     """
     if logger is None:
         logger = logging.getLogger(__name__)
@@ -167,14 +170,33 @@ def main(config_data: dict, logger: Optional[logging.Logger] = None) -> None:
     section_file_counts = get_section_file_counts(all_media_info, logger)
     
     # Combine section file counts and media counts into all_media_info
+    failed_libraries = []
+    successful_libraries = []
+    
     for library in all_media_info:
         library['file_count'] = section_file_counts.get(library['name'], 0)
         library['media_count'] = section_media_counts.get(library['name'], 0)
         library['section_key'] = sections.get(library['name'])
+        
         if process_library(plex, library, logger):
             logger.info(f'Library "{library["name"]}" processed successfully.')
+            successful_libraries.append(library['name'])
         else:
             logger.error(f'Library "{library["name"]}" processing failed.')
+            failed_libraries.append(library['name'])
+    
+    # Report final status
+    total_libraries = len(all_media_info)
+    if failed_libraries:
+        logger.error(f'Processing completed with errors. Failed: {len(failed_libraries)}/{total_libraries} libraries: {", ".join(failed_libraries)}')
+        if successful_libraries:
+            logger.info(f'Successfully processed: {", ".join(successful_libraries)}')
+            return 1  # Partial failure
+        else:
+            return 2  # Complete failure
+    else:
+        logger.info(f'All {total_libraries} libraries processed successfully.')
+        return 0  # Success
 
 
 if __name__ == "__main__":
@@ -194,4 +216,5 @@ if __name__ == "__main__":
     logger = logging.getLogger(__name__)
     logger.debug(f'Configuration loaded: {config_data}')
 
-    main(config_data, logger)
+    exit_code = main(config_data, logger)
+    sys.exit(exit_code)
