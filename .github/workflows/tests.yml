@@ -44,7 +44,7 @@ jobs:
         echo "## Test Coverage Report" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo '```' >> $GITHUB_STEP_SUMMARY
-        tail -n 20 pytest-coverage.txt >> $GITHUB_STEP_SUMMARY
+        tail -n 18 pytest-coverage.txt >> $GITHUB_STEP_SUMMARY
         echo '```' >> $GITHUB_STEP_SUMMARY
     
     - name: Comment PR with coverage
