@@ -27,22 +27,12 @@ fi
 
 echo "Permissions set. Running as dumpsterr user (UID 1000)..."
 
-# Drop privileges and run as dumpsterr user for all subsequent commands
-exec gosu dumpsterr "$0" --as-user "$@"
-
-# Drop privileges and run as dumpsterr user for all subsequent commands
-exec su-exec dumpsterr "$0-as-user" "$@"
-
-# This section runs as dumpsterr user (UID 1000)
-if [ "$1" = "--as-user" ]; then
-    shift
-
 # Run dumpsterr immediately on startup
 # Using -u flag for unbuffered output to ensure logs are immediately visible
 echo "Running dumpsterr on startup..."
 cd /app
 
-/usr/local/bin/python -u src/main.py
+gosu dumpsterr /usr/local/bin/python -u src/main.py
 EXIT_CODE=$?
 
 # Handle tri-state exit codes:
@@ -78,6 +68,4 @@ echo "$CRON_SCHEDULE cd /app && /usr/local/bin/python src/main.py" > /app/cronta
 # Start supercronic in foreground (handles scheduling)
 # Use -passthrough-logs to prevent wrapping each log line with cron metadata
 echo "Starting cron scheduler..."
-exec /usr/local/bin/supercronic -passthrough-logs /app/crontab
-
-fi  # End of dumpsterr user section
+exec gosu dumpsterr /usr/local/bin/supercronic -passthrough-logs /app/crontab
