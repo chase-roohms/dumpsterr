@@ -68,5 +68,10 @@ ENV PYTHONUNBUFFERED=1
 # Force Python to write logs to stdout/stderr immediately
 ENV PYTHONIOENCODING=utf-8
 
+# Health check to ensure the application is responsive
+# Checks if the cron process (supercronic) is running
+HEALTHCHECK --interval=5m --timeout=10s --start-period=30s --retries=3 \
+    CMD pgrep -f supercronic > /dev/null || exit 1
+
 # Run entrypoint script (runs app once, then starts cron)
 CMD ["/bin/bash", "/app/entrypoint.sh"]
