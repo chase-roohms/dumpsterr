@@ -5,8 +5,8 @@ services:
     volumes:
       # Mount your config file
       - ./config.yml:/app/data/config.yml:ro
-      # Mount data directory for metrics persistence
-      - ./data:/app/data
+      # Mount metrics directory for persistence (optional)
+      - ./metrics:/app/metrics
       # Mount your media directories (adjust paths as needed)
       # Add more directories as required, ensuring they match those in config.yml
       - /media/plex/movies:/media/movies:ro

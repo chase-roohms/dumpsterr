@@ -82,7 +82,7 @@ services:
     container_name: dumpsterr
     volumes:
       - ./config.yml:/app/data/config.yml:ro
-      - ./data:/app/data  # For metrics persistence
+      - ./metrics:/app/metrics  # For metrics persistence (optional)
       - /path/to/movies:/media/movies:ro
       - /path/to/shows:/media/shows:ro
     environment:
@@ -117,7 +117,7 @@ docker compose up -d
 docker run -d \
   --name dumpsterr \
   -v ./config.yml:/app/data/config.yml:ro \
-  -v ./data:/app/data \
+  -v ./metrics:/app/metrics \
   -v /path/to/movies:/media/movies:ro \
   -v /path/to/shows:/media/shows:ro \
   -e PLEX_URL=http://192.168.1.100:32400 \
@@ -133,7 +133,7 @@ docker run -d \
 
 ### Metrics
 
-Automatically collected in `data/metrics.json`:
+Automatically collected in `metrics/metrics.json`:
 - Run history (last 100 runs)
 - Success/failure rates
 - Per-library statistics

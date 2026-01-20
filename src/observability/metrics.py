@@ -10,7 +10,7 @@ from typing import Dict, List, Optional
 class MetricsCollector:
     """Collects and persists application metrics."""
     
-    def __init__(self, metrics_file: str = 'data/metrics.json'):
+    def __init__(self, metrics_file: str = 'metrics/metrics.json'):
         """Initialize metrics collector.
         
         Args:
@@ -159,7 +159,7 @@ class MetricsCollector:
         return self.current_run.copy()
     
     @staticmethod
-    def load_latest_metrics(metrics_file: str = 'data/metrics.json') -> Optional[Dict]:
+    def load_latest_metrics(metrics_file: str = 'metrics/metrics.json') -> Optional[Dict]:
         """Load the latest metrics from file.
         
         Args:

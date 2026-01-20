@@ -164,12 +164,12 @@ Example metrics structure:
 
 ### Accessing Metrics
 
-Mount the data directory to access metrics from the host:
+Mount the metrics directory to access metrics from the host:
 
 ```yaml
 volumes:
   - ./config.yml:/app/data/config.yml:ro
-  - ./data:/app/data  # Shared data directory
+  - ./metrics:/app/metrics  # Metrics directory
 ```
 
 Metrics are automatically:
@@ -179,7 +179,7 @@ Metrics are automatically:
 
 ### Monitoring Integration
 
-Parse `data/metrics.json` with monitoring tools:
+Parse `metrics/metrics.json` with monitoring tools:
 
 **Prometheus (using file_sd_config):**
 ```yaml
@@ -197,7 +197,7 @@ Point to metrics file URL and create dashboards.
 ```bash
 #!/bin/bash
 # Check last run success rate
-jq '.summary.successful_runs / .summary.total_runs * 100' data/metrics.json
+jq '.summary.successful_runs / .summary.total_runs * 100' metrics/metrics.json
 ```
 
 ## Exit Codes
@@ -252,10 +252,10 @@ settings:
 
 ### Missing Metrics
 
-Ensure data directory is writable:
+Ensure metrics directory is writable:
 ```bash
-docker exec dumpsterr ls -la /app/data
-docker exec dumpsterr touch /app/data/test.txt
+docker exec dumpsterr ls -la /app/metrics
+docker exec dumpsterr touch /app/metrics/test.txt
 ```
 
 ### Log Rotation Not Working
