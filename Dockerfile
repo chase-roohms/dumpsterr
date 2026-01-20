@@ -81,9 +81,8 @@ COPY schemas/ ./schemas/
 RUN mkdir -p /app/data /app/metrics && \
     chown -R dumpsterr:dumpsterr /app
 
-# Copy crontab file
-COPY src/crontab /app/crontab
-RUN chown dumpsterr:dumpsterr /app/crontab
+# Create empty crontab file with proper ownership (populated by entrypoint)
+RUN touch /app/crontab && chown dumpsterr:dumpsterr /app/crontab
 
 # Copy entrypoint script
 COPY entrypoint.sh /app/entrypoint.sh
