@@ -1,5 +1,9 @@
 # dumpsterr
 
+[![Tests](https://github.com/chase-roohms/dumpsterr/workflows/Tests/badge.svg)](https://github.com/chase-roohms/dumpsterr/actions)
+[![Coverage](https://img.shields.io/badge/coverage-87%25-brightgreen)](htmlcov/index.html)
+[![Python](https://img.shields.io/badge/python-3.12%2B-blue)](https://www.python.org/downloads/)
+
 Automated Plex trash management tool that validates filesystem state before emptying library trash. Prevents accidental deletion when using network-mounted storage.
 
 # Quickstart
@@ -206,6 +210,65 @@ src/
 - PyYAML
 - jsonschema
 - requests
+
+## Development & Testing
+
+dumpsterr includes a comprehensive test suite covering all modules.
+
+### Installing Development Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### Running Tests
+
+```bash
+# Run all tests
+pytest
+
+# Run with coverage report
+pytest --cov=src --cov-report=html
+
+# Run specific test files
+pytest tests/test_config.py
+pytest tests/test_filesystem.py
+pytest tests/test_plex_client.py
+pytest tests/test_main.py
+
+# Skip Plex integration tests (require real server)
+pytest -m "not plex"
+```
+
+### Plex Integration Tests
+
+Some tests require a real Plex server connection. To enable these:
+
+1. Copy the environment template:
+   ```bash
+   cp .env.test.example .env.test
+   ```
+
+2. Edit `.env.test` with your Plex server details:
+   ```
+   PLEX_URL=http://your-plex-server:32400
+   PLEX_TOKEN=your_actual_plex_token
+   ```
+
+3. Run Plex integration tests:
+   ```bash
+   pytest -m plex
+   ```
+
+### Test Coverage
+
+The test suite includes:
+- **Configuration Tests**: YAML parsing, schema validation, error handling
+- **Filesystem Tests**: Directory validation, file counting, permissions
+- **Plex Client Tests**: API mocking, error handling, retry logic
+- **Integration Tests**: Complete workflow testing with mocked dependencies
+
+View detailed testing documentation: [tests/README.md](tests/README.md)
 
 ## License
 

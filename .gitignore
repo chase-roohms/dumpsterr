@@ -57,6 +57,7 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 cover/
+pytest-coverage.txt
 
 # Translations
 *.mo
@@ -156,6 +157,7 @@ activemq-data/
 
 # Environments
 .env
+.env.test
 .envrc
 .venv
 env/
