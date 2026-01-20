@@ -58,8 +58,3 @@ def get_config(config_path: str = 'data/config.yml') -> dict:
     config = _get_yaml(config_path)
     _validate_schema(config)
     return config
-
-if __name__ == "__main__":
-    # Example usage / testing
-    config = get_config()
-    pp(config)

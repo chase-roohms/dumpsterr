@@ -107,16 +107,3 @@ class PlexClient:
             raise requests.exceptions.RequestException(
                 f"Failed to empty trash for section {section_key}: {e}"
             ) from e
-
-if __name__ == "__main__":
-    # Example usage / testing
-    from os import getenv
-    
-    plex = PlexClient(base_url=getenv('PLEX_URL'), token=getenv('PLEX_TOKEN'))
-    sections = plex.get_library_sections()
-    plex.empty_section_trash(sections['Movies'])
-    plex.empty_section_trash(sections['TV Shows'])
-    pp(sections)
-    for key, value in sections.items():
-        size = plex.get_library_size(value)
-        print(f'Section: {key}, Size: {size}')

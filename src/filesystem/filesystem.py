@@ -49,13 +49,3 @@ def get_file_counts(directory: str) -> int:
     _validate_directory(directory)
     dir_path = Path(directory)
     return len([f for f in dir_path.iterdir()])
-
-if __name__ == "__main__":
-    # Example usage / testing
-    test_dir = 'data'
-    print(is_valid_directory(test_dir))
-    try:
-        count = get_file_counts(test_dir)
-        print(f"Number of files in '{test_dir}': {count}")
-    except Exception as e:
-        print(f"Error: {e}")
