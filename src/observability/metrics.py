@@ -17,7 +17,6 @@ class MetricsCollector:
             metrics_file: Path to metrics file for persistence.
         """
         self.metrics_file = Path(metrics_file)
-        self.metrics_file.parent.mkdir(parents=True, exist_ok=True)
         
         self.current_run = {
             'start_time': None,
@@ -86,18 +85,28 @@ class MetricsCollector:
     
     def save_metrics(self) -> None:
         """Persist metrics to file and update historical data."""
-        # Load existing metrics
-        historical_metrics = self._load_historical_metrics()
-        
-        # Add current run to history
-        historical_metrics['runs'].append(self.current_run)
-        
-        # Update summary statistics
-        self._update_summary(historical_metrics)
-        
-        # Write to file
-        with open(self.metrics_file, 'w') as f:
-            json.dump(historical_metrics, f, indent=2)
+        try:
+            # Ensure parent directory exists with proper permissions
+            self.metrics_file.parent.mkdir(parents=True, exist_ok=True)
+            
+            # Load existing metrics
+            historical_metrics = self._load_historical_metrics()
+            
+            # Add current run to history
+            historical_metrics['runs'].append(self.current_run)
+            
+            # Update summary statistics
+            self._update_summary(historical_metrics)
+            
+            # Write to file
+            with open(self.metrics_file, 'w') as f:
+                json.dump(historical_metrics, f, indent=2)
+        except (OSError, IOError, PermissionError) as e:
+            # Metrics are optional - log error but don't fail the application
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f'Failed to save metrics to {self.metrics_file}: {e}')
+            logger.info('Tip: Mount a volume at /app/metrics for metrics persistence')
     
     def _load_historical_metrics(self) -> Dict:
         """Load existing metrics or initialize new structure."""

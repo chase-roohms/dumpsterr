@@ -43,8 +43,8 @@ COPY src/ ./src/
 # Copy config schema
 COPY schemas/ ./schemas/
 
-# Create data directory
-RUN mkdir -p /app/data && \
+# Create data and metrics directories
+RUN mkdir -p /app/data /app/metrics && \
     chown -R dumpsterr:dumpsterr /app
 
 # Copy crontab file

@@ -73,6 +73,8 @@ Optional:
 - `LOG_FORMAT` - Log format: `standard` or `json` (default: `standard`)
 - `LOG_FILE` - Optional file path for log rotation (e.g., `/app/logs/dumpsterr.log`)
 
+**Note**: Metrics collection is automatic but optional. Mount `/app/metrics` to persist metrics history.
+
 ### Docker Compose
 
 ```yaml

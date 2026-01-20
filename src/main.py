@@ -234,7 +234,7 @@ def main(config_data: dict, logger: Optional[logging.Logger] = None, metrics_col
     if metrics_collector:
         metrics_collector.end_run(exit_code)
         metrics_collector.save_metrics()
-        logger.info(f'Metrics saved to {metrics_collector.metrics_file}')
+        # Metrics saving is now optional with graceful failure handling
     
     return exit_code
 
