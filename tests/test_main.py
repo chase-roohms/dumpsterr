@@ -6,8 +6,10 @@ import os
 import pytest
 from unittest.mock import Mock, patch, MagicMock
 from pathlib import Path
+import jsonschema
 
 import main as main_module
+from observability.metrics import MetricsCollector
 
 
 class TestSumPathFileCounts:
@@ -582,3 +584,349 @@ class TestMainIntegration:
         mock_plex.get_library_sections.assert_called_once()
         assert mock_plex.get_library_size.call_count == 2
         assert mock_plex.empty_section_trash.call_count == 2
+
+
+class TestMainWithMetrics:
+    """Tests for main function with metrics collector integration."""
+    
+    @patch('main.plex_client.PlexClient')
+    def test_main_with_metrics_collector_success(self, mock_plex_class, test_files_dir, temp_dir, monkeypatch):
+        """Test main function with metrics collector for successful run."""
+        monkeypatch.setenv('PLEX_URL', 'http://localhost:32400')
+        monkeypatch.setenv('PLEX_TOKEN', 'test_token')
+        
+        mock_plex = Mock()
+        mock_plex.get_library_sections.return_value = {'Movies': '1'}
+        mock_plex.get_library_size.return_value = 100
+        mock_plex.empty_section_trash.return_value = True
+        mock_plex_class.return_value = mock_plex
+        
+        config_data = {
+            'libraries': [
+                {
+                    'name': 'Movies',
+                    'path': test_files_dir,
+                    'min_files': 0,
+                    'min_threshold': 0
+                }
+            ]
+        }
+        
+        logger = logging.getLogger('test')
+        metrics_file = str(Path(temp_dir) / 'metrics.json')
+        metrics_collector = MetricsCollector(metrics_file)
+        
+        exit_code = main_module.main(config_data, logger, metrics_collector)
+        
+        assert exit_code == 0
+        
+        # Verify metrics were collected
+        current_metrics = metrics_collector.get_current_metrics()
+        assert current_metrics['start_time'] is not None
+        assert current_metrics['end_time'] is not None
+        assert current_metrics['exit_code'] == 0
+        assert current_metrics['libraries_total'] == 1
+        assert current_metrics['libraries_successful'] == 1
+        assert current_metrics['libraries_failed'] == 0
+        
+        # Verify metrics were saved
+        assert Path(metrics_file).exists()
+    
+    @patch('main.plex_client.PlexClient')
+    def test_main_with_metrics_collector_partial_failure(self, mock_plex_class, test_files_dir, temp_dir, monkeypatch):
+        """Test main function with metrics collector for partial failure."""
+        monkeypatch.setenv('PLEX_URL', 'http://localhost:32400')
+        monkeypatch.setenv('PLEX_TOKEN', 'test_token')
+        
+        mock_plex = Mock()
+        mock_plex.get_library_sections.return_value = {'Movies': '1', 'TV Shows': '2'}
+        mock_plex.get_library_size.side_effect = [100, 100]
+        # First succeeds, second fails
+        mock_plex.empty_section_trash.side_effect = [True, False]
+        mock_plex_class.return_value = mock_plex
+        
+        config_data = {
+            'libraries': [
+                {
+                    'name': 'Movies',
+                    'path': test_files_dir,
+                    'min_files': 0,
+                    'min_threshold': 0
+                },
+                {
+                    'name': 'TV Shows',
+                    'path': test_files_dir,
+                    'min_files': 0,
+                    'min_threshold': 0
+                }
+            ]
+        }
+        
+        logger = logging.getLogger('test')
+        metrics_file = str(Path(temp_dir) / 'metrics.json')
+        metrics_collector = MetricsCollector(metrics_file)
+        
+        exit_code = main_module.main(config_data, logger, metrics_collector)
+        
+        assert exit_code == 1  # Partial failure
+        
+        # Verify metrics were collected
+        current_metrics = metrics_collector.get_current_metrics()
+        assert current_metrics['exit_code'] == 1
+        assert current_metrics['libraries_total'] == 2
+        assert current_metrics['libraries_successful'] == 1
+        assert current_metrics['libraries_failed'] == 1
+        assert len(current_metrics['library_details']) == 2
+    
+    @patch('main.plex_client.PlexClient')
+    def test_main_with_metrics_collector_complete_failure(self, mock_plex_class, test_files_dir, temp_dir, monkeypatch):
+        """Test main function with metrics collector for complete failure."""
+        monkeypatch.setenv('PLEX_URL', 'http://localhost:32400')
+        monkeypatch.setenv('PLEX_TOKEN', 'test_token')
+        
+        mock_plex = Mock()
+        mock_plex.get_library_sections.return_value = {'Movies': '1'}
+        mock_plex.get_library_size.return_value = 100
+        mock_plex.empty_section_trash.return_value = False
+        mock_plex_class.return_value = mock_plex
+        
+        config_data = {
+            'libraries': [
+                {
+                    'name': 'Movies',
+                    'path': test_files_dir,
+                    'min_files': 0,
+                    'min_threshold': 0
+                }
+            ]
+        }
+        
+        logger = logging.getLogger('test')
+        metrics_file = str(Path(temp_dir) / 'metrics.json')
+        metrics_collector = MetricsCollector(metrics_file)
+        
+        exit_code = main_module.main(config_data, logger, metrics_collector)
+        
+        assert exit_code == 2  # Complete failure
+        
+        # Verify metrics were collected
+        current_metrics = metrics_collector.get_current_metrics()
+        assert current_metrics['exit_code'] == 2
+        assert current_metrics['libraries_total'] == 1
+        assert current_metrics['libraries_successful'] == 0
+        assert current_metrics['libraries_failed'] == 1
+
+
+class TestCliMain:
+    """Tests for cli_main function (CLI entry point)."""
+    
+    @patch('main.config.get_config')
+    @patch('main.setup_logging')
+    @patch('main.main')
+    @patch('main.plex_client.PlexClient')
+    def test_cli_main_success(self, mock_plex_class, mock_main, mock_setup_logging, mock_get_config, monkeypatch):
+        """Test cli_main with successful execution."""
+        monkeypatch.setenv('PLEX_URL', 'http://localhost:32400')
+        monkeypatch.setenv('PLEX_TOKEN', 'test_token')
+        
+        # Mock config loading
+        mock_config = {
+            'libraries': [],
+            'settings': {
+                'log_level': 'DEBUG'
+            }
+        }
+        mock_get_config.return_value = mock_config
+        
+        # Mock logger
+        mock_logger = Mock()
+        mock_setup_logging.return_value = mock_logger
+        
+        # Mock main returning success
+        mock_main.return_value = 0
+        
+        exit_code = main_module.cli_main()
+        
+        assert exit_code == 0
+        mock_get_config.assert_called_once()
+        mock_setup_logging.assert_called_once_with(
+            log_level='DEBUG',
+            log_format='standard',
+            log_file=None
+        )
+        mock_main.assert_called_once()
+    
+    @patch('main.config.get_config')
+    @patch('main.setup_logging')
+    @patch('main.main')
+    def test_cli_main_with_json_logging(self, mock_main, mock_setup_logging, mock_get_config, monkeypatch):
+        """Test cli_main with JSON logging format."""
+        monkeypatch.setenv('LOG_FORMAT', 'json')
+        monkeypatch.setenv('PLEX_URL', 'http://localhost:32400')
+        monkeypatch.setenv('PLEX_TOKEN', 'test_token')
+        
+        mock_config = {
+            'libraries': [],
+            'settings': {
+                'log_level': 'INFO'
+            }
+        }
+        mock_get_config.return_value = mock_config
+        mock_logger = Mock()
+        mock_setup_logging.return_value = mock_logger
+        mock_main.return_value = 0
+        
+        exit_code = main_module.cli_main()
+        
+        assert exit_code == 0
+        mock_setup_logging.assert_called_once_with(
+            log_level='INFO',
+            log_format='json',
+            log_file=None
+        )
+    
+    @patch('main.config.get_config')
+    @patch('main.setup_logging')
+    @patch('main.main')
+    def test_cli_main_with_log_file(self, mock_main, mock_setup_logging, mock_get_config, monkeypatch):
+        """Test cli_main with log file rotation enabled."""
+        monkeypatch.setenv('LOG_FILE', '/var/log/app.log')
+        monkeypatch.setenv('PLEX_URL', 'http://localhost:32400')
+        monkeypatch.setenv('PLEX_TOKEN', 'test_token')
+        
+        mock_config = {
+            'libraries': [],
+            'settings': {
+                'log_level': 'WARNING'
+            }
+        }
+        mock_get_config.return_value = mock_config
+        mock_logger = Mock()
+        mock_setup_logging.return_value = mock_logger
+        mock_main.return_value = 0
+        
+        exit_code = main_module.cli_main()
+        
+        assert exit_code == 0
+        mock_setup_logging.assert_called_once_with(
+            log_level='WARNING',
+            log_format='standard',
+            log_file='/var/log/app.log'
+        )
+    
+    @patch('main.config.get_config')
+    @patch('main.setup_logging')
+    @patch('main.main')
+    def test_cli_main_default_log_level(self, mock_main, mock_setup_logging, mock_get_config, monkeypatch):
+        """Test cli_main uses default log level when not specified."""
+        monkeypatch.setenv('PLEX_URL', 'http://localhost:32400')
+        monkeypatch.setenv('PLEX_TOKEN', 'test_token')
+        
+        # Config without settings
+        mock_config = {
+            'libraries': []
+        }
+        mock_get_config.return_value = mock_config
+        mock_logger = Mock()
+        mock_setup_logging.return_value = mock_logger
+        mock_main.return_value = 0
+        
+        exit_code = main_module.cli_main()
+        
+        assert exit_code == 0
+        mock_setup_logging.assert_called_once_with(
+            log_level='INFO',  # Default
+            log_format='standard',
+            log_file=None
+        )
+    
+    @patch('main.config.get_config')
+    def test_cli_main_config_validation_error(self, mock_get_config, capsys):
+        """Test cli_main handles config validation errors."""
+        mock_get_config.side_effect = jsonschema.ValidationError('Invalid config')
+        
+        exit_code = main_module.cli_main()
+        
+        assert exit_code == 1
+        captured = capsys.readouterr()
+        assert 'Failed to load configuration' in captured.out
+        assert 'Invalid config' in captured.out
+    
+    @patch('main.config.get_config')
+    def test_cli_main_config_file_not_found(self, mock_get_config, capsys):
+        """Test cli_main handles missing config file."""
+        mock_get_config.side_effect = FileNotFoundError('Config file not found')
+        
+        exit_code = main_module.cli_main()
+        
+        assert exit_code == 1
+        captured = capsys.readouterr()
+        assert 'Failed to load configuration' in captured.out
+        assert 'Config file not found' in captured.out
+    
+    @patch('main.config.get_config')
+    def test_cli_main_config_permission_error(self, mock_get_config, capsys):
+        """Test cli_main handles permission errors."""
+        mock_get_config.side_effect = PermissionError('Permission denied')
+        
+        exit_code = main_module.cli_main()
+        
+        assert exit_code == 1
+        captured = capsys.readouterr()
+        assert 'Failed to load configuration' in captured.out
+        assert 'Permission denied' in captured.out
+    
+    @patch('main.config.get_config')
+    def test_cli_main_config_is_directory_error(self, mock_get_config, capsys):
+        """Test cli_main handles directory instead of file error."""
+        mock_get_config.side_effect = IsADirectoryError('Is a directory')
+        
+        exit_code = main_module.cli_main()
+        
+        assert exit_code == 1
+        captured = capsys.readouterr()
+        assert 'Failed to load configuration' in captured.out
+        assert 'Is a directory' in captured.out
+    
+    @patch('main.config.get_config')
+    @patch('main.setup_logging')
+    @patch('main.main')
+    @patch('main.MetricsCollector')
+    def test_cli_main_initializes_metrics_collector(self, mock_metrics_class, mock_main, mock_setup_logging, mock_get_config, monkeypatch):
+        """Test cli_main initializes metrics collector."""
+        monkeypatch.setenv('PLEX_URL', 'http://localhost:32400')
+        monkeypatch.setenv('PLEX_TOKEN', 'test_token')
+        
+        mock_config = {'libraries': [], 'settings': {'log_level': 'INFO'}}
+        mock_get_config.return_value = mock_config
+        mock_logger = Mock()
+        mock_setup_logging.return_value = mock_logger
+        mock_metrics = Mock()
+        mock_metrics_class.return_value = mock_metrics
+        mock_main.return_value = 0
+        
+        exit_code = main_module.cli_main()
+        
+        assert exit_code == 0
+        mock_metrics_class.assert_called_once()
+        # Verify metrics collector was passed to main
+        mock_main.assert_called_once_with(mock_config, mock_logger, mock_metrics)
+    
+    @patch('main.config.get_config')
+    @patch('main.setup_logging')
+    @patch('main.main')
+    def test_cli_main_returns_main_exit_code(self, mock_main, mock_setup_logging, mock_get_config, monkeypatch):
+        """Test cli_main returns the exit code from main."""
+        monkeypatch.setenv('PLEX_URL', 'http://localhost:32400')
+        monkeypatch.setenv('PLEX_TOKEN', 'test_token')
+        
+        mock_config = {'libraries': [], 'settings': {}}
+        mock_get_config.return_value = mock_config
+        mock_logger = Mock()
+        mock_setup_logging.return_value = mock_logger
+        
+        # Test different exit codes
+        for expected_code in [0, 1, 2]:
+            mock_main.return_value = expected_code
+            exit_code = main_module.cli_main()
+            assert exit_code == expected_code

@@ -52,6 +52,56 @@ class TestStructuredFormatter:
         
         assert data['library_name'] == 'Movies'
         assert data['file_count'] == 100
+    
+    def test_format_with_exception(self):
+        """Test formatting a log record with exception info."""
+        formatter = StructuredFormatter()
+        try:
+            raise ValueError("Test exception")
+        except ValueError:
+            import sys
+            exc_info = sys.exc_info()
+            
+            record = logging.LogRecord(
+                name="test",
+                level=logging.ERROR,
+                pathname="test.py",
+                lineno=10,
+                msg="An error occurred",
+                args=(),
+                exc_info=exc_info
+            )
+            
+            result = formatter.format(record)
+            data = json.loads(result)
+            
+            assert data['level'] == 'ERROR'
+            assert data['message'] == 'An error occurred'
+            assert 'exception' in data
+            assert 'ValueError: Test exception' in data['exception']
+    
+    def test_format_with_media_count(self):
+        """Test formatting with media_count field."""
+        formatter = StructuredFormatter()
+        record = logging.LogRecord(
+            name="test",
+            level=logging.INFO,
+            pathname="test.py",
+            lineno=10,
+            msg="Processing complete",
+            args=(),
+            exc_info=None
+        )
+        record.library_name = "TV Shows"
+        record.file_count = 50
+        record.media_count = 45
+        
+        result = formatter.format(record)
+        data = json.loads(result)
+        
+        assert data['library_name'] == 'TV Shows'
+        assert data['file_count'] == 50
+        assert data['media_count'] == 45
 
 
 class TestSetupLogging:
@@ -224,3 +274,97 @@ class TestMetricsCollector:
         
         assert data['summary']['total_runs'] == 105
         assert len(data['runs']) == 100
+    
+    def test_save_metrics_with_permission_error(self, temp_dir, caplog):
+        """Test metrics save gracefully handles permission errors."""
+        import os
+        import stat
+        
+        metrics_file = str(Path(temp_dir) / 'readonly' / 'metrics.json')
+        collector = MetricsCollector(metrics_file)
+        collector.start_run()
+        collector.end_run(0)
+        
+        # Create parent directory but make it read-only
+        os.makedirs(Path(metrics_file).parent, exist_ok=True)
+        os.chmod(Path(metrics_file).parent, stat.S_IRUSR | stat.S_IXUSR)
+        
+        try:
+            with caplog.at_level(logging.WARNING):
+                collector.save_metrics()
+            
+            # Should have logged a warning but not raised an exception
+            assert any('Failed to save metrics' in record.message for record in caplog.records)
+        finally:
+            # Restore permissions for cleanup
+            os.chmod(Path(metrics_file).parent, stat.S_IRWXU)
+    
+    def test_load_corrupted_json_file(self, temp_dir):
+        """Test loading metrics when JSON file is corrupted."""
+        metrics_file = str(Path(temp_dir) / 'corrupted.json')
+        
+        # Create a corrupted JSON file
+        with open(metrics_file, 'w') as f:
+            f.write('{"invalid json": ')
+        
+        # Should return initialized structure, not crash
+        collector = MetricsCollector(metrics_file)
+        collector.start_run()
+        collector.end_run(0)
+        collector.save_metrics()
+        
+        # Verify it overwrote the corrupted file with valid data
+        with open(metrics_file, 'r') as f:
+            data = json.load(f)
+        
+        assert 'summary' in data
+        assert data['summary']['total_runs'] == 1
+    
+    def test_update_summary_with_failed_exit_code(self, temp_dir):
+        """Test _update_summary with exit code 2 (failure)."""
+        metrics_file = str(Path(temp_dir) / 'metrics.json')
+        collector = MetricsCollector(metrics_file)
+        
+        collector.start_run()
+        collector.add_library_result('Movies', False, 10, 100, 10.0, 'Major error')
+        collector.end_run(2)  # Exit code 2 = failure
+        collector.save_metrics()
+        
+        with open(metrics_file, 'r') as f:
+            data = json.load(f)
+        
+        assert data['summary']['total_runs'] == 1
+        assert data['summary']['successful_runs'] == 0
+        assert data['summary']['partial_runs'] == 0
+        assert data['summary']['failed_runs'] == 1
+    
+    def test_get_current_metrics(self, temp_dir):
+        """Test get_current_metrics returns a copy of current run data."""
+        metrics_file = str(Path(temp_dir) / 'metrics.json')
+        collector = MetricsCollector(metrics_file)
+        
+        collector.start_run()
+        collector.add_library_result('Movies', True, 100, 95, 105.26)
+        
+        current = collector.get_current_metrics()
+        
+        # Verify it's a copy
+        assert current == collector.current_run
+        assert current is not collector.current_run
+        
+        # Modifying the copy shouldn't affect the original
+        current['libraries_total'] = 999
+        assert collector.current_run['libraries_total'] == 1
+    
+    def test_load_latest_metrics_corrupted_json(self, temp_dir):
+        """Test load_latest_metrics with corrupted JSON file."""
+        metrics_file = str(Path(temp_dir) / 'corrupted2.json')
+        
+        # Create a corrupted JSON file
+        with open(metrics_file, 'w') as f:
+            f.write('not valid json at all')
+        
+        # Should return None instead of crashing
+        result = MetricsCollector.load_latest_metrics(metrics_file)
+        
+        assert result is None
