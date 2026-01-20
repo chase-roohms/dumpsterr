@@ -16,13 +16,31 @@ fi
 echo "Running dumpsterr on startup..."
 cd /app
 
-if /usr/local/bin/python -u src/main.py; then
-    echo "Startup run completed successfully"
-else
-    echo "ERROR: Startup run failed with exit code $?"
-    # Exit with error code to prevent starting the cron scheduler
-    exit 1
-fi
+/usr/local/bin/python -u src/main.py
+EXIT_CODE=$?
+
+# Handle tri-state exit codes:
+# 0 = Success (all libraries processed)
+# 1 = Partial failure (some libraries processed successfully)
+# 2 = Complete failure (no libraries processed successfully)
+case $EXIT_CODE in
+    0)
+        echo "Startup run completed successfully - all libraries processed"
+        ;;
+    1)
+        echo "WARNING: Startup run completed with partial failures - some libraries processed"
+        echo "Continuing with cron scheduler..."
+        ;;
+    2)
+        echo "ERROR: Startup run failed completely - no libraries processed"
+        echo "Exiting to prevent starting cron scheduler with broken configuration"
+        exit 2
+        ;;
+    *)
+        echo "ERROR: Startup run failed with unexpected exit code $EXIT_CODE"
+        exit 1
+        ;;
+esac
 
 # Set default cron schedule if not provided (every hour at minute 0)
 CRON_SCHEDULE="${CRON_SCHEDULE:-0 * * * *}"
