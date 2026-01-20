@@ -19,35 +19,39 @@ RUN set -eux; \
     apt-get update && \
     apt-get install -y curl procps ca-certificates && \
     \
-    # Detect architecture
-    dpkgArch="$(dpkg --print-architecture)"; \
-    case "$dpkgArch" in \
-        amd64) \
-            supercronicArch='amd64'; \
-            supercronicSha1='f70ad28d0d739a96dc9e2087ae370c257e79b8d7'; \
-            gosuArch='amd64'; \
-            gosuSha256='ea9eaef7f46ece76a5ce81caabd45a8e39b80cb73dd7aeb82a13b1aeab420827'; \
+    # Detect architecture (TARGETARCH from buildx, fallback to dpkg)
+    if [ -n "${TARGETARCH:-}" ]; then \
+        arch="$TARGETARCH"; \
+    else \
+        arch="$(dpkg --print-architecture)"; \
+    fi; \
+    case "$arch" in \
+        amd64|x86_64) \
+            supercronicUrl='https://github.com/aptible/supercronic/releases/download/v0.2.41/supercronic-linux-amd64'; \
+            supercronicSha256='798d0f6cf11cb74109b6408c50b1222cdd7678e8e70895dcfa9c2701b4bd03d5'; \
+            gosuUrl='https://github.com/tianon/gosu/releases/download/1.18/gosu-amd64'; \
+            gosuSha256='3119d1ebba2978dd95353e6bfc78c44382ac5aef00fd258d9fa4ff9292d9472b'; \
             ;; \
-        arm64) \
-            supercronicArch='arm64'; \
-            supercronicSha1='44e10e33e8d98b1d1522f6719f15fb9469786ff0'; \
-            gosuArch='arm64'; \
+        arm64|aarch64) \
+            supercronicUrl='https://github.com/aptible/supercronic/releases/download/v0.2.41/supercronic-linux-arm64'; \
+            supercronicSha256='5f8d5ed5e02734b68d2d908719297f8558c2edbeb407072f86ed024a7b6ac74e'; \
+            gosuUrl='https://github.com/tianon/gosu/releases/download/1.18/gosu-arm64'; \
             gosuSha256='132ddfb9fcc470325d80326ce8cb7b91536520fe82637b2f96b6336ad2d350ec'; \
             ;; \
-        *) echo >&2 "error: unsupported architecture: $dpkgArch"; exit 1 ;; \
+        *) echo >&2 "error: unsupported architecture: $arch"; exit 1 ;; \
     esac; \
     \
     # Install supercronic
-    curl -fsSLO "https://github.com/aptible/supercronic/releases/download/${SUPERCRONIC_VERSION}/supercronic-linux-${supercronicArch}"; \
-    echo "${supercronicSha1}  supercronic-linux-${supercronicArch}" | sha1sum -c -; \
-    chmod +x "supercronic-linux-${supercronicArch}"; \
-    mv "supercronic-linux-${supercronicArch}" /usr/local/bin/supercronic; \
+    curl -fsSL -o /usr/local/bin/supercronic "$supercronicUrl"; \
+    echo "$supercronicSha256  /usr/local/bin/supercronic" | sha256sum -c -; \
+    chmod +x /usr/local/bin/supercronic; \
     \
     # Install gosu
-    curl -fsSL -o /usr/local/bin/gosu "https://github.com/tianon/gosu/releases/download/${GOSU_VERSION}/gosu-${gosuArch}"; \
-    echo "${gosuSha256}  /usr/local/bin/gosu" | sha256sum -c -; \
+    curl -fsSL -o /usr/local/bin/gosu "$gosuUrl"; \
+    echo "$gosuSha256  /usr/local/bin/gosu" | sha256sum -c -; \
     chmod +x /usr/local/bin/gosu; \
     gosu --version; \
+    supercronic -version; \
     \
     # Clean up
     apt-get remove -y curl && \
