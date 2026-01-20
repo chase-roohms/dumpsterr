@@ -13,7 +13,7 @@ WORKDIR /app
 # - supercronic: https://github.com/aptible/supercronic/releases
 # - gosu: https://github.com/tianon/gosu/releases
 ENV SUPERCRONIC_VERSION=v0.2.41 \
-    GOSU_VERSION=1.18
+    GOSU_VERSION=1.19
 
 RUN set -eux; \
     apt-get update && \
@@ -29,14 +29,14 @@ RUN set -eux; \
         amd64|x86_64) \
             supercronicUrl='https://github.com/aptible/supercronic/releases/download/v0.2.41/supercronic-linux-amd64'; \
             supercronicSha256='798d0f6cf11cb74109b6408c50b1222cdd7678e8e70895dcfa9c2701b4bd03d5'; \
-            gosuUrl='https://github.com/tianon/gosu/releases/download/1.18/gosu-amd64'; \
-            gosuSha256='3119d1ebba2978dd95353e6bfc78c44382ac5aef00fd258d9fa4ff9292d9472b'; \
+            gosuUrl='https://github.com/tianon/gosu/releases/download/1.19/gosu-amd64'; \
+            gosuSha256='52c8749d0142edd234e9d6bd5237dff2d81e71f43537e2f4f66f75dd4b243dd0'; \
             ;; \
         arm64|aarch64) \
             supercronicUrl='https://github.com/aptible/supercronic/releases/download/v0.2.41/supercronic-linux-arm64'; \
             supercronicSha256='5f8d5ed5e02734b68d2d908719297f8558c2edbeb407072f86ed024a7b6ac74e'; \
-            gosuUrl='https://github.com/tianon/gosu/releases/download/1.18/gosu-arm64'; \
-            gosuSha256='132ddfb9fcc470325d80326ce8cb7b91536520fe82637b2f96b6336ad2d350ec'; \
+            gosuUrl='https://github.com/tianon/gosu/releases/download/1.19/gosu-arm64'; \
+            gosuSha256='3a8ef022d82c0bc4a98bcb144e77da714c25fcfa64dccc57f6aba7ae47ff1a44'; \
             ;; \
         *) echo >&2 "error: unsupported architecture: $arch"; exit 1 ;; \
     esac; \
