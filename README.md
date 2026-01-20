@@ -170,16 +170,23 @@ docker build -t dumpsterr .
 
 ## Scheduling
 
-Runs hourly via supercronic (see [src/crontab](src/crontab)). Also executes on container startup.
+Runs hourly by default. Schedule is controlled via the `CRON_SCHEDULE` environment variable. Also executes on container startup.
 
-To modify schedule, edit [src/crontab](src/crontab) and rebuild:
-```bash
-# Current: hourly
-0 * * * * cd /app && /usr/local/bin/python src/main.py
-
-# Example: every 6 hours
-0 */6 * * * cd /app && /usr/local/bin/python src/main.py
+To modify schedule, set `CRON_SCHEDULE` in your docker-compose.yml or .env file:
+```yaml
+# docker-compose.yml
+environment:
+  - CRON_SCHEDULE=0 * * * *  # Hourly (default)
+  # - CRON_SCHEDULE=0 */6 * * *  # Every 6 hours
+  # - CRON_SCHEDULE=0 0 * * *    # Daily at midnight
 ```
+
+Or in your .env file:
+```shell
+CRON_SCHEDULE=0 */6 * * *  # Every 6 hours
+```
+
+No container rebuild required - just restart the container after changing the environment variable.
 
 ## Validation Process
 
