@@ -1,7 +1,7 @@
 # dumpsterr
 
 [![Tests](https://github.com/chase-roohms/dumpsterr/workflows/Tests/badge.svg)](https://github.com/chase-roohms/dumpsterr/actions)
-[![Coverage](https://img.shields.io/badge/coverage-87%25-brightgreen)](htmlcov/index.html)
+[![codecov](https://codecov.io/gh/chase-roohms/dumpsterr/branch/main/graph/badge.svg)](https://codecov.io/gh/chase-roohms/dumpsterr)
 [![Python](https://img.shields.io/badge/python-3.12%2B-blue)](https://www.python.org/downloads/)
 
 Automated Plex trash management tool that validates filesystem state before emptying library trash. Prevents accidental deletion when using network-mounted storage.
