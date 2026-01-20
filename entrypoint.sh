@@ -1,6 +1,18 @@
 #!/bin/bash
 
+# Validate required environment variables
+if [ -z "$PLEX_URL" ]; then
+    echo "ERROR: PLEX_URL environment variable is not set"
+    exit 1
+fi
+
+if [ -z "$PLEX_TOKEN" ]; then
+    echo "ERROR: PLEX_TOKEN environment variable is not set"
+    exit 1
+fi
+
 # Run dumpsterr immediately on startup
+# Using -u flag for unbuffered output to ensure logs are immediately visible
 echo "Running dumpsterr on startup..."
 cd /app
 
