@@ -127,7 +127,7 @@ class TestGetConfig:
         # Mock the schema path in get_config to use our test schema
         original_validate = config_module._validate_schema
         
-        def mock_validate(config, schema_path='src/public/config.schema.yml'):
+        def mock_validate(config, schema_path='schemas/config.schema.yml'):
             # Use our test schema instead of the default one
             original_validate(config, sample_schema_yaml)
         
@@ -153,7 +153,7 @@ class TestGetConfig:
         
         original_validate = config_module._validate_schema
         
-        def mock_validate(config, schema_path='src/public/config.schema.yml'):
+        def mock_validate(config, schema_path='schemas/config.schema.yml'):
             # Use our test schema instead of the default one
             original_validate(config, sample_schema_yaml)
         
@@ -178,7 +178,7 @@ class TestGetConfig:
         
         original_validate = config_module._validate_schema
         
-        def mock_validate(config, schema_path='src/public/config.schema.yml'):
+        def mock_validate(config, schema_path='schemas/config.schema.yml'):
             # Use our test schema instead of the default one
             original_validate(config, sample_schema_yaml)
         
@@ -203,7 +203,7 @@ class TestGetConfig:
         
         original_validate = config_module._validate_schema
         
-        def mock_validate(config, schema_path='src/public/config.schema.yml'):
+        def mock_validate(config, schema_path='schemas/config.schema.yml'):
             # Use our test schema instead of the default one
             original_validate(config, sample_schema_yaml)
         

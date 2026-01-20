@@ -41,7 +41,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY src/ ./src/
 
 # Copy config schema
-COPY src/public/ ./src/public/
+COPY schemas/ ./schemas/
 
 # Create data directory
 RUN mkdir -p /app/data && \

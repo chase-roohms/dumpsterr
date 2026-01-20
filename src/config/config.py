@@ -1,7 +1,6 @@
 import yaml
 import jsonschema
 import os
-from pprint import pp
 
 def _get_yaml(file_path: str) -> dict:
     """Load a YAML file and return its contents as a dictionary.
@@ -31,7 +30,7 @@ def _get_yaml(file_path: str) -> dict:
         data = yaml.safe_load(file)
     return data
 
-def _validate_schema(config: dict, schema_path: str = 'src/public/config.schema.yml') -> None:
+def _validate_schema(config: dict, schema_path: str = 'schemas/config.schema.yml') -> None:
     """Validate the configuration data against the JSON schema.
     
     Args:

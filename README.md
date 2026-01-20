@@ -56,7 +56,7 @@ settings:
 ```
 
 Configuration validation:
-- Schema: [src/public/config.schema.yml](src/public/config.schema.yml)
+- Schema: [schemas/config.schema.yml](schemas/config.schema.yml)
 - Validated on startup using jsonschema
 
 ## Docker Setup
