@@ -35,6 +35,9 @@ jobs:
         pip install -r requirements-dev.txt
     
     - name: Run tests with pytest
+      env:
+        PLEX_URL: ${{ secrets.PLEX_URL }}
+        PLEX_TOKEN: ${{ secrets.PLEX_TOKEN }}
       run: |
         set -o pipefail
         pytest -v \
@@ -43,7 +46,6 @@ jobs:
           --cov-report=term-missing \
           --junitxml=junit.xml \
           -o junit_family=legacy \
-          -m "not plex" \
           | tee pytest-coverage.txt
     
     - name: Upload coverage to Codecov
