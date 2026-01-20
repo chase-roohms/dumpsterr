@@ -239,13 +239,18 @@ def main(config_data: dict, logger: Optional[logging.Logger] = None, metrics_col
     return exit_code
 
 
-if __name__ == "__main__":
+def cli_main() -> int:
+    """CLI entry point - loads configuration and runs main application.
+    
+    Returns:
+        Exit code: 0 for success, 1 for partial failures, 2 for complete failure.
+    """
     # Load configuration
     try:
         config_data = config.get_config()
     except (jsonschema.ValidationError, FileNotFoundError, PermissionError, IsADirectoryError) as e:
         print(f'Failed to load configuration: {e}')
-        sys.exit(1)
+        return 1
     
     # Configure logging with optional JSON format and file rotation
     log_level = config_data.get('settings', {}).get('log_level', 'INFO')
@@ -263,4 +268,8 @@ if __name__ == "__main__":
     metrics_collector = MetricsCollector()
 
     exit_code = main(config_data, logger, metrics_collector)
-    sys.exit(exit_code)
+    return exit_code
+
+
+if __name__ == "__main__":  # pragma: no cover
+    sys.exit(cli_main())
