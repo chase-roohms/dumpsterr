@@ -11,6 +11,7 @@ import jsonschema
 import config
 import filesystem
 import plex_client
+from observability import setup_logging, MetricsCollector
 
 DEFAULT_MIN_FILES = 0
 DEFAULT_MIN_THRESHOLD = 90
@@ -96,6 +97,16 @@ def get_section_file_counts(all_media_info: list[dict], logger: logging.Logger) 
     return section_file_counts
 
 def process_library(plex: plex_client.PlexClient, library: dict, logger: logging.Logger) -> bool:
+    """Process a single library: validate and empty trash if checks pass.
+    
+    Args:
+        plex: PlexClient instance.
+        library: Library configuration dictionary.
+        logger: Logger instance.
+        
+    Returns:
+        True if successful, False otherwise.
+    """
     # All valid directories and are accessible
     if not is_dirs_valid(library['path'], logger):
         logger.error(f'One or more directories for library "{library["name"]}" are invalid or inaccessible.')
@@ -131,18 +142,22 @@ def process_library(plex: plex_client.PlexClient, library: dict, logger: logging
     return True # Successfully processed library
 
 
-def main(config_data: dict, logger: Optional[logging.Logger] = None) -> int:
+def main(config_data: dict, logger: Optional[logging.Logger] = None, metrics_collector: Optional[MetricsCollector] = None) -> int:
     """Main function to validate directories and empty Plex trash.
     
     Args:
         config_data: Configuration dictionary loaded from config file.
         logger: Logger instance for logging messages. If None, uses root logger.
+        metrics_collector: Optional metrics collector for observability.
         
     Returns:
         Exit code: 0 for success, 1 for partial failures, 2 for complete failure.
     """
     if logger is None:
         logger = logging.getLogger(__name__)
+    
+    if metrics_collector:
+        metrics_collector.start_run()
     
     # Store libraries info for logic checks and persistent storage of data
     # during the run
@@ -175,25 +190,53 @@ def main(config_data: dict, logger: Optional[logging.Logger] = None) -> int:
         library['media_count'] = section_media_counts.get(library['name'], 0)
         library['section_key'] = sections.get(library['name'])
         
-        if process_library(plex, library, logger):
+        # Calculate actual percentage for metrics
+        expected_media_count = library['media_count']
+        actual_file_count = library['file_count']
+        actual_percentage = (actual_file_count / expected_media_count * 100) if expected_media_count > 0 else 0
+        
+        success = process_library(plex, library, logger)
+        
+        if success:
             logger.info(f'Library "{library["name"]}" processed successfully.')
             successful_libraries.append(library['name'])
         else:
             logger.error(f'Library "{library["name"]}" processing failed.')
             failed_libraries.append(library['name'])
+        
+        # Record metrics if collector is provided
+        if metrics_collector:
+            metrics_collector.add_library_result(
+                name=library['name'],
+                success=success,
+                file_count=actual_file_count,
+                media_count=expected_media_count,
+                threshold_percentage=actual_percentage,
+                error_message=None if success else "Validation or trash emptying failed"
+            )
     
     # Report final status
     total_libraries = len(all_media_info)
+    exit_code = 0
+    
     if failed_libraries:
         logger.error(f'Processing completed with errors. Failed: {len(failed_libraries)}/{total_libraries} libraries: {", ".join(failed_libraries)}')
         if successful_libraries:
             logger.info(f'Successfully processed: {", ".join(successful_libraries)}')
-            return 1  # Partial failure
+            exit_code = 1  # Partial failure
         else:
-            return 2  # Complete failure
+            exit_code = 2  # Complete failure
     else:
         logger.info(f'All {total_libraries} libraries processed successfully.')
-        return 0  # Success
+        exit_code = 0  # Success
+    
+    # Finalize metrics
+    if metrics_collector:
+        metrics_collector.end_run(exit_code)
+        metrics_collector.save_metrics()
+        logger.info(f'Metrics saved to {metrics_collector.metrics_file}')
+    
+    return exit_code
 
 
 if __name__ == "__main__":
@@ -204,14 +247,20 @@ if __name__ == "__main__":
         print(f'Failed to load configuration: {e}')
         sys.exit(1)
     
-    # Configure logging
+    # Configure logging with optional JSON format and file rotation
     log_level = config_data.get('settings', {}).get('log_level', 'INFO')
-    logging.basicConfig(
-        level=getattr(logging, log_level),
-        format='%(asctime)s - %(levelname)s - %(message)s'
+    log_format = os.getenv('LOG_FORMAT', 'standard')  # 'standard' or 'json'
+    log_file = os.getenv('LOG_FILE')  # Optional file path for rotation
+    
+    logger = setup_logging(
+        log_level=log_level,
+        log_format=log_format,
+        log_file=log_file
     )
-    logger = logging.getLogger(__name__)
     logger.debug(f'Configuration loaded: {config_data}')
+    
+    # Initialize metrics collector
+    metrics_collector = MetricsCollector()
 
-    exit_code = main(config_data, logger)
+    exit_code = main(config_data, logger, metrics_collector)
     sys.exit(exit_code)

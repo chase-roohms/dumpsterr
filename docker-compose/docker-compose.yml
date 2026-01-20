@@ -5,6 +5,8 @@ services:
     volumes:
       # Mount your config file
       - ./config.yml:/app/data/config.yml:ro
+      # Mount data directory for metrics persistence
+      - ./data:/app/data
       # Mount your media directories (adjust paths as needed)
       # Add more directories as required, ensuring they match those in config.yml
       - /media/plex/movies:/media/movies:ro
@@ -15,4 +17,11 @@ services:
       - PLEX_URL=${PLEX_URL}  # Change to your Plex server URL
       - PLEX_TOKEN=${PLEX_TOKEN}  # Get from https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/
       - CRON_SCHEDULE=${CRON_SCHEDULE}  # Default: every hour at minute 0
+      - LOG_FORMAT=${LOG_FORMAT:-standard}  # 'standard' or 'json'
+    # Recommended: Configure log rotation to prevent unbounded growth
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"  # Rotate after 10MB
+        max-file: "3"    # Keep 3 rotated files (30MB total)
 

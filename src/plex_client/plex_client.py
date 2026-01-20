@@ -2,7 +2,6 @@ import json
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
-from pprint import pp
 
 
 class PlexClient:

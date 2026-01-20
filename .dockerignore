@@ -8,6 +8,16 @@ __pycache__/
 dist/
 build/
 
+# Testing
+htmlcov/
+.coverage
+.pytest_cache/
+coverage.xml
+pytest-coverage.txt
+tests/
+test_*.py
+conftest.py
+
 # Virtual environments
 venv/
 env/
@@ -20,12 +30,30 @@ ENV/
 # Git
 .git/
 .gitignore
+.gitattributes
+
+# CI/CD
+.github/
 
 # Test data (mount as volume instead)
 test/
 
 # Config files (mount as volume instead)
 data/config.yml
+data/metrics.json
+
+# Development files
+requirements-dev.txt
+run_tests.sh
+pytest.ini
+
+# Docker
+docker-compose/
+
+# Documentation (except README)
+docs/
+*.md
+!README.md
 
 # OS
 .DS_Store

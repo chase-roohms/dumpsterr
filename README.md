@@ -69,6 +69,9 @@ Required:
 
 Optional:
 - `TZ` - Timezone (e.g., `America/New_York`)
+- `CRON_SCHEDULE` - Cron schedule (default: `0 * * * *` - hourly)
+- `LOG_FORMAT` - Log format: `standard` or `json` (default: `standard`)
+- `LOG_FILE` - Optional file path for log rotation (e.g., `/app/logs/dumpsterr.log`)
 
 ### Docker Compose
 
@@ -79,12 +82,20 @@ services:
     container_name: dumpsterr
     volumes:
       - ./config.yml:/app/data/config.yml:ro
+      - ./data:/app/data  # For metrics persistence
       - /path/to/movies:/media/movies:ro
       - /path/to/shows:/media/shows:ro
     environment:
       - PLEX_URL=${PLEX_URL}
       - PLEX_TOKEN=${PLEX_TOKEN}
       - TZ=${TZ}
+      - LOG_FORMAT=standard  # or 'json' for structured logging
+    # Recommended: Configure log rotation to prevent unbounded growth
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     restart: unless-stopped
 ```
 
@@ -106,14 +117,45 @@ docker compose up -d
 docker run -d \
   --name dumpsterr \
   -v ./config.yml:/app/data/config.yml:ro \
+  -v ./data:/app/data \
   -v /path/to/movies:/media/movies:ro \
   -v /path/to/shows:/media/shows:ro \
   -e PLEX_URL=http://192.168.1.100:32400 \
   -e PLEX_TOKEN=your_token_here \
   -e TZ=America/New_York \
+  --log-opt max-size=10m \
+  --log-opt max-file=3 \
   --restart unless-stopped \
   neonvariant/dumpsterr:latest
 ```
+
+## Observability
+
+### Metrics
+
+Automatically collected in `data/metrics.json`:
+- Run history (last 100 runs)
+- Success/failure rates
+- Per-library statistics
+- Processing duration
+
+See [docs/OBSERVABILITY.md](docs/OBSERVABILITY.md) for details.
+
+### Logging
+
+Two formats available:
+- **Standard** (default): Human-readable
+- **JSON**: Structured for log aggregation
+
+Configure log rotation via Docker logging driver (recommended) or file-based rotation.
+
+See [docs/OBSERVABILITY.md](docs/OBSERVABILITY.md) for configuration examples.
+
+### Exit Codes
+
+- `0`: All libraries processed successfully
+- `1`: Partial failure (some libraries failed)
+- `2`: Complete failure (all libraries failed)
 
 ## Build from Source
 
