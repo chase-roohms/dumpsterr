@@ -53,3 +53,31 @@ jobs:
       uses: py-cov-action/python-coverage-comment-action@v3
       with:
         GITHUB_TOKEN: ${{ github.token }}
+
+  docker:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Validate entrypoint syntax
+      run: |
+        bash -n entrypoint.sh
+        echo "✓ Entrypoint syntax is valid"
+    
+    - name: Lint entrypoint with shellcheck
+      run: |
+        shellcheck -x entrypoint.sh || echo "⚠ Shellcheck warnings found (non-blocking)"
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Build Docker image
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        push: false
+        tags: dumpsterr:test
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        platforms: linux/amd64,linux/arm64
