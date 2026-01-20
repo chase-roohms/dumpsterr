@@ -15,13 +15,11 @@ ENV SUPERCRONIC_URL=https://github.com/aptible/supercronic/releases/download/v0.
     SUPERCRONIC=supercronic-linux-amd64
 
 RUN apt-get update && \
-    apt-get install -y curl procps && \
+    apt-get install -y curl procps gosu && \
     curl -fsSLO "$SUPERCRONIC_URL" && \
     echo "${SUPERCRONIC_SHA1SUM}  ${SUPERCRONIC}" | sha1sum -c - && \
     chmod +x "$SUPERCRONIC" && \
     mv "$SUPERCRONIC" /usr/local/bin/supercronic && \
-    # Install su-exec for dropping privileges
-    apt-get install -y su-exec && \
     apt-get remove -y curl && \
     apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/*

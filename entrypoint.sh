@@ -28,13 +28,13 @@ fi
 echo "Permissions set. Running as dumpsterr user (UID 1000)..."
 
 # Drop privileges and run as dumpsterr user for all subsequent commands
-exec su-exec dumpsterr "$0-as-user" "$@"
+exec gosu dumpsterr "$0" --as-user "$@"
 
 # Drop privileges and run as dumpsterr user for all subsequent commands
 exec su-exec dumpsterr "$0-as-user" "$@"
 
 # This section runs as dumpsterr user (UID 1000)
-if [ "$1" = "$0-as-user" ]; then
+if [ "$1" = "--as-user" ]; then
     shift
 
 # Run dumpsterr immediately on startup
