@@ -105,8 +105,8 @@ class MetricsCollector:
             # Metrics are optional - log error but don't fail the application
             import logging
             logger = logging.getLogger(__name__)
-            logger.warning(f'Failed to save metrics to {self.metrics_file}: {e}')
-            logger.info('Tip: Mount a volume at /app/metrics for metrics persistence')
+            logger.warning(f'Failed to save metrics: {e}')
+            logger.info('Metrics are optional and will not be persisted this run')
     
     def _load_historical_metrics(self) -> Dict:
         """Load existing metrics or initialize new structure."""

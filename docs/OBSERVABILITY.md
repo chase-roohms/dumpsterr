@@ -174,6 +174,9 @@ volumes:
   - ./metrics:/app/metrics  # Metrics directory
 ```
 
+The container automatically creates the directory and handles permissions.
+Just mount the volume and it will work.
+
 Metrics are automatically:
 - Updated after each run
 - Limited to last 100 runs (prevents unlimited growth)
@@ -254,11 +257,17 @@ settings:
 
 ### Missing Metrics
 
-Ensure metrics directory is writable:
+If metrics aren't being saved, check the container logs:
+```bash
+docker logs dumpsterr | grep -i metric
+```
+
+Verify the metrics directory is accessible:
 ```bash
 docker exec dumpsterr ls -la /app/metrics
-docker exec dumpsterr touch /app/metrics/test.txt
 ```
+
+If you see permission warnings, the container will still run normally - metrics are optional.
 
 ### Log Rotation Not Working
 

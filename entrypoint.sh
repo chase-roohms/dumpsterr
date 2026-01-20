@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 # Validate required environment variables
 if [ -z "$PLEX_URL" ]; then
@@ -10,6 +11,31 @@ if [ -z "$PLEX_TOKEN" ]; then
     echo "ERROR: PLEX_TOKEN environment variable is not set"
     exit 1
 fi
+
+# Fix permissions for mounted volumes (runs as root)
+echo "Setting up directories and permissions..."
+
+# Ensure metrics directory exists and is owned by dumpsterr user
+mkdir -p /app/metrics
+chown -R dumpsterr:dumpsterr /app/metrics
+chmod -R 755 /app/metrics
+
+# Ensure data directory is accessible
+if [ -d "/app/data" ]; then
+    chown dumpsterr:dumpsterr /app/data
+fi
+
+echo "Permissions set. Running as dumpsterr user (UID 1000)..."
+
+# Drop privileges and run as dumpsterr user for all subsequent commands
+exec su-exec dumpsterr "$0-as-user" "$@"
+
+# Drop privileges and run as dumpsterr user for all subsequent commands
+exec su-exec dumpsterr "$0-as-user" "$@"
+
+# This section runs as dumpsterr user (UID 1000)
+if [ "$1" = "$0-as-user" ]; then
+    shift
 
 # Run dumpsterr immediately on startup
 # Using -u flag for unbuffered output to ensure logs are immediately visible
@@ -53,3 +79,5 @@ echo "$CRON_SCHEDULE cd /app && /usr/local/bin/python src/main.py" > /app/cronta
 # Use -passthrough-logs to prevent wrapping each log line with cron metadata
 echo "Starting cron scheduler..."
 exec /usr/local/bin/supercronic -passthrough-logs /app/crontab
+
+fi  # End of dumpsterr user section

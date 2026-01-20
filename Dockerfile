@@ -20,6 +20,8 @@ RUN apt-get update && \
     echo "${SUPERCRONIC_SHA1SUM}  ${SUPERCRONIC}" | sha1sum -c - && \
     chmod +x "$SUPERCRONIC" && \
     mv "$SUPERCRONIC" /usr/local/bin/supercronic && \
+    # Install su-exec for dropping privileges
+    apt-get install -y su-exec && \
     apt-get remove -y curl && \
     apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/*
@@ -56,8 +58,7 @@ COPY entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh && \
     chown dumpsterr:dumpsterr /app/entrypoint.sh
 
-# Switch to non-root user
-USER dumpsterr
+# Note: Entrypoint runs as root to fix permissions, then switches to dumpsterr user
 
 # Set Python path so imports work correctly
 ENV PYTHONPATH=/app/src
