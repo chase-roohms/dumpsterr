@@ -15,11 +15,12 @@ import plex_client
 DEFAULT_MIN_FILES = 0
 DEFAULT_MIN_THRESHOLD = 90
 
-def sum_path_file_counts(paths: list[str]) -> int:
+def sum_path_file_counts(paths: list[str], logger: logging.Logger) -> int:
     """Sum the file counts across multiple directories.
     
     Args:
         paths: List of directory paths.
+        logger: Logger instance for logging messages.
         
     Returns:
         Total number of files across all specified directories.
@@ -30,17 +31,18 @@ def sum_path_file_counts(paths: list[str]) -> int:
         if not is_valid_dir:
             raise ValueError(f'Directory "{path}" is invalid or inaccessible: {error}')
         count = filesystem.get_file_counts(path)
-        logging.debug(f'Number of files in "{path}": {count}')
+        logger.debug(f'Number of files in "{path}": {count}')
         total_count += count
     return total_count
 
-def is_dirs_valid(directories: list[str]) -> bool:
+def is_dirs_valid(directories: list[str], logger: logging.Logger) -> bool:
     """Check the validity of directories as specified in the configuration data.
     
     Verify each directory exists and is readable.
     
     Args:
         directories: List of directory paths to validate.
+        logger: Logger instance for logging messages.
         
     Returns:
         True if all directories are valid and accessible, False otherwise.
@@ -48,18 +50,19 @@ def is_dirs_valid(directories: list[str]) -> bool:
     for path in directories:
         is_valid_dir, error = filesystem.is_valid_directory(path)
         if not is_valid_dir:
-            logging.error(f'Directory "{path}" is invalid or inaccessible: {error}')
+            logger.error(f'Directory "{path}" is invalid or inaccessible: {error}')
             return False
-        logging.debug(f'Directory "{path}" is valid and accessible.')
+        logger.debug(f'Directory "{path}" is valid and accessible.')
     return True
 
 
-def get_section_media_counts(plex: plex_client.PlexClient, sections: dict[str, str]) -> dict[str, int]:
+def get_section_media_counts(plex: plex_client.PlexClient, sections: dict[str, str], logger: logging.Logger) -> dict[str, int]:
     """Get media counts for each Plex section.
     
     Args:
         plex: PlexClient instance.
         sections: Mapping of section names to their keys.
+        logger: Logger instance for logging messages.
     Returns:
         Mapping of section names to their media counts.
     """
@@ -68,15 +71,16 @@ def get_section_media_counts(plex: plex_client.PlexClient, sections: dict[str, s
     for section, key in sections.items():
         media_count = plex.get_library_size(key)
         section_media_counts[section] = media_count
-        logging.info(f'Plex Section: {section}, Size: {media_count}')
+        logger.info(f'Plex Section: {section}, Size: {media_count}')
     return section_media_counts
 
 
-def get_section_file_counts(all_media_info: list[dict]) -> dict[str, int]:
+def get_section_file_counts(all_media_info: list[dict], logger: logging.Logger) -> dict[str, int]:
     """Get file counts for each Plex section based on configured library paths.
     
     Args:
         all_media_info: List of dictionaries containing media information for each section.
+        logger: Logger instance for logging messages.
     Returns:
         Mapping of section names to their file counts.
     """
@@ -90,42 +94,42 @@ def get_section_file_counts(all_media_info: list[dict]) -> dict[str, int]:
             is_valid_dir, error = filesystem.is_valid_directory(path)
             if not is_valid_dir:
                 raise ValueError(f'Directory "{path}" is invalid or inaccessible: {error}')
-        file_counts = sum_path_file_counts(paths)
+        file_counts = sum_path_file_counts(paths, logger)
         section_file_counts[section_name] = file_counts
     return section_file_counts
 
-def process_library(plex: plex_client.PlexClient, library: dict) -> bool:
+def process_library(plex: plex_client.PlexClient, library: dict, logger: logging.Logger) -> bool:
     # All valid directories and are accessible
-    if not is_dirs_valid(library['path']):
-        logging.error(f'One or more directories for library "{library["name"]}" are invalid or inaccessible.')
+    if not is_dirs_valid(library['path'], logger):
+        logger.error(f'One or more directories for library "{library["name"]}" are invalid or inaccessible.')
         return False
-    logging.info(f'All directories for library "{library["name"]}" are valid and accessible.')
+    logger.info(f'All directories for library "{library["name"]}" are valid and accessible.')
     # Minimum file counts
     if library.get('file_count', -1) < library.get('min_files', DEFAULT_MIN_FILES):
-        logging.error(f'File counts for library "{library["name"]}" are not met (actual {library.get("file_count", -1)}, minimum {library.get("min_files", DEFAULT_MIN_FILES)}).')
+        logger.error(f'File counts for library "{library["name"]}" are not met (actual {library.get("file_count", -1)}, minimum {library.get("min_files", DEFAULT_MIN_FILES)}).')
         return False
-    logging.info(f'File counts for library "{library["name"]}" are met (actual {library.get("file_count", -1)}, minimum {library.get("min_files", DEFAULT_MIN_FILES)}).')
+    logger.info(f'File counts for library "{library["name"]}" are met (actual {library.get("file_count", -1)}, minimum {library.get("min_files", DEFAULT_MIN_FILES)}).')
     # Minimum file count thresholds
     expected_media_count = library.get('media_count', 0)
     actual_file_count = library.get('file_count', 0)
     min_threshold = library.get('min_threshold', DEFAULT_MIN_THRESHOLD)
     actual_percentage = (actual_file_count / expected_media_count * 100) if expected_media_count > 0 else 0
     if actual_percentage < min_threshold:
-        logging.error(f'File count thresholds for library "{library["name"]}" are not met (actual {actual_percentage:.2f}%, minimum {min_threshold}%).')
+        logger.error(f'File count thresholds for library "{library["name"]}" are not met (actual {actual_percentage:.2f}%, minimum {min_threshold}%).')
         return False
-    logging.info(f'File count thresholds for library "{library["name"]}" are met (actual {actual_percentage:.2f}%, minimum {min_threshold}%).')
-    logging.info(f'All validation checks passed for library "{library["name"]}". Emptying trash...')
+    logger.info(f'File count thresholds for library "{library["name"]}" are met (actual {actual_percentage:.2f}%, minimum {min_threshold}%).')
+    logger.info(f'All validation checks passed for library "{library["name"]}". Emptying trash...')
     section_name = library['name']
     section_key = library['section_key']
     if section_key:
         success = plex.empty_section_trash(section_key)
         if success:
-            logging.info(f'Successfully emptied trash for section "{section_name}".')
+            logger.info(f'Successfully emptied trash for section "{section_name}".')
         else:
-            logging.error(f'Failed to empty trash for section "{section_name}".')
+            logger.error(f'Failed to empty trash for section "{section_name}".')
             return False
     else:
-        logging.error(f'Section "{section_name}" not found in Plex library sections.')
+        logger.error(f'Section "{section_name}" not found in Plex library sections.')
         return False
     return True # Successfully processed library
 
@@ -154,23 +158,23 @@ def main(config_data: dict, logger: Optional[logging.Logger] = None) -> None:
     )
     # Set up Plex client and retrieve library sections
     sections = plex.get_library_sections()
-    logging.debug(f'Plex library sections: {sections}')
+    logger.debug(f'Plex library sections: {sections}')
 
     # Get media counts for each Plex section
-    section_media_counts = get_section_media_counts(plex, sections)
+    section_media_counts = get_section_media_counts(plex, sections, logger)
 
     # Get file counts for each configured library path or path array
-    section_file_counts = get_section_file_counts(all_media_info)
+    section_file_counts = get_section_file_counts(all_media_info, logger)
     
     # Combine section file counts and media counts into all_media_info
     for library in all_media_info:
         library['file_count'] = section_file_counts.get(library['name'], 0)
         library['media_count'] = section_media_counts.get(library['name'], 0)
         library['section_key'] = sections.get(library['name'])
-        if process_library(plex, library):
-            logging.info(f'Library "{library["name"]}" processed successfully.')
+        if process_library(plex, library, logger):
+            logger.info(f'Library "{library["name"]}" processed successfully.')
         else:
-            logging.error(f'Library "{library["name"]}" processing failed.')
+            logger.error(f'Library "{library["name"]}" processing failed.')
 
 
 if __name__ == "__main__":
