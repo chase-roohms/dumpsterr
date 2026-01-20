@@ -116,7 +116,7 @@ docker logs --since 2026-01-20T10:00:00 --until 2026-01-20T11:00:00 dumpsterr
 Metrics are automatically collected to track application performance and reliability. **Metrics are optional** - if the metrics directory is not writable, the application will log a warning but continue normal operation.
 ### Metrics File
 
-Metrics are automatically collected and persisted to `data/metrics.json`.
+Metrics are automatically collected and persisted to `metrics/metrics.json`.
 
 Example metrics structure:
 
@@ -192,7 +192,7 @@ scrape_configs:
   - job_name: 'dumpsterr'
     file_sd_configs:
       - files:
-          - '/path/to/data/metrics.json'
+          - '/path/to/metrics/metrics.json'
 ```
 
 **Grafana JSON Datasource:**
