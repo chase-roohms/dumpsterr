@@ -8,6 +8,8 @@ if /usr/local/bin/python -u src/main.py; then
     echo "Startup run completed successfully"
 else
     echo "ERROR: Startup run failed with exit code $?"
+    # Exit with error code to prevent starting the cron scheduler
+    exit 1
 fi
 
 # Set default cron schedule if not provided (every hour at minute 0)
