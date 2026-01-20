@@ -90,10 +90,7 @@ def get_section_file_counts(all_media_info: list[dict], logger: logging.Logger) 
         paths = library['path']
         if isinstance(paths, str):
             paths = [paths]
-        for path in paths:
-            is_valid_dir, error = filesystem.is_valid_directory(path)
-            if not is_valid_dir:
-                raise ValueError(f'Directory "{path}" is invalid or inaccessible: {error}')
+        # Validation will be done later in process_library via is_dirs_valid
         file_counts = sum_path_file_counts(paths, logger)
         section_file_counts[section_name] = file_counts
     return section_file_counts
