@@ -29,8 +29,8 @@ jobs:
           
           # Add comment/update field if applicable
           if [ "$EVENT_ACTION" = "created" ] && [ -n "$COMMENT_BODY" ]; then
-            FIELD_COMMENT=$(jq -nc --arg value "$COMMENT_BODY" \
-              '{"name":"💬 Comment","value":$value, "inline": false}')
+            FIELD_COMMENT=$(jq -nc --arg value "$COMMENT_BODY" --arg user "$GITHUB_ACTOR" \
+              '{"name":"💬 Comment from \($user)","value":$value, "inline": false}')
             FIELDS_JSON=$(jq -nc \
                   --argjson number "$FIELD_NUMBER" \
                   --argjson state "$FIELD_STATE" \
