@@ -37,14 +37,12 @@ jobs:
           webhook_url: ${{ secrets.DISCORD_WEBHOOK_URL }}
           username: chase-roohms/dumpsterr
           avatar_url: https://raw.githubusercontent.com/chase-roohms/dumpsterr/main/logo.png
-          embed-titles: "New Issue: ${{ github.event.issue.title }}"
-          embed-descriptions: |
-            Description: ${{ github.event.issue.body }}
-            URL: ${{ github.event.issue.html_url }}
+          embed-titles: "Issue: ${{ github.event.issue.title }}"
+          embed-descriptions: ${{ github.event.issue.body }}
           embed-urls: ${{ github.event.issue.html_url }}
           embed-colors: "#E5A00D"
           embed-fields: ${{ steps.get-embed.outputs.fields_json }}
           embed-authors: ${{ github.event.issue.user.login }}
           embed-author-urls: ${{ github.event.issue.user.html_url }}
           embed-author-icons: ${{ github.event.issue.user.avatar_url }}
-          embed-timestamps: ${{ github.event.issue.updated_at }} 
+          embed-timestamps: 'now'
