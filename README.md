@@ -232,12 +232,34 @@ volumes:
 ```
 Then `config.yml` must exist in the same directory as `docker-compose.yml` before running `docker compose up`.
 
+### Using Symlinked Media Libraries
+
+If your media library contains symlinks (e.g., symlinks pointing to an rclone mount), **both the symlink source and target directories must be mounted** in the container.
+
+**How it works**: dumpsterr follows symlinks to their target paths and validates that the target files exist. If symlinks point to unmounted paths, they're detected as broken, causing validation to fail (which prevents trash emptying when your mount is down ✅).
+
+**Example Configuration**:
+```yaml
+volumes:
+  - /host/media:/media:ro       # Your organized symlink library
+  - /mnt/rclone:/mnt/rclone:ro  # The actual files symlinks point to
+```
+
+**Important**: The mount paths inside the container must match the paths your symlinks reference. If your symlinks point to `/mnt/rclone/Movies/file.mkv`, then `/mnt/rclone` must be mounted in the container at that exact path.
+
+**Relative symlinks**: If your symlinks use relative paths (e.g., `../rclone/file.mkv`), ensure the relative directory structure is preserved in your container mounts.
+
+**Validation behavior with broken symlinks**:
+- Mount is up → symlinks resolve → files counted normally
+- Mount is down → symlinks broken → file count drops → validation fails → trash not emptied ✅
+
 ### Container starts but nothing happens
 
 Check that:
 - `PLEX_URL` is accessible from the container
 - `PLEX_TOKEN` is valid
 - Media paths in `config.yml` match the container paths (not host paths)
+- If using symlinks, ensure both source and target directories are mounted
 
 ## Plex Configuration
 
