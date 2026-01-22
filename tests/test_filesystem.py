@@ -305,3 +305,372 @@ class TestFilesystemIntegration:
         
         count = filesystem_module.get_file_counts(str(unicode_dir))
         assert count == 3
+
+
+class TestSymlinkSupport:
+    """Tests for symlink support in filesystem module."""
+    
+    def test_validate_symlink_to_directory(self, temp_dir):
+        """Test validating a symlink that points to a valid directory."""
+        target_dir = Path(temp_dir) / 'target'
+        target_dir.mkdir()
+        (target_dir / 'file.txt').write_text('content')
+        
+        link_dir = Path(temp_dir) / 'link'
+        try:
+            link_dir.symlink_to(target_dir)
+        except OSError:
+            pytest.skip("Symbolic links not supported on this system")
+        
+        # Should validate successfully
+        filesystem_module._validate_directory(str(link_dir))
+    
+    def test_is_valid_symlink_to_directory(self, temp_dir):
+        """Test is_valid_directory with symlink to valid directory."""
+        target_dir = Path(temp_dir) / 'target'
+        target_dir.mkdir()
+        
+        link_dir = Path(temp_dir) / 'link'
+        try:
+            link_dir.symlink_to(target_dir)
+        except OSError:
+            pytest.skip("Symbolic links not supported on this system")
+        
+        is_valid, error = filesystem_module.is_valid_directory(str(link_dir))
+        assert is_valid is True
+        assert error == ''
+    
+    def test_broken_symlink_raises_error(self, temp_dir):
+        """Test that broken symlink raises FileNotFoundError."""
+        target_dir = Path(temp_dir) / 'target'
+        target_dir.mkdir()
+        
+        link_dir = Path(temp_dir) / 'link'
+        try:
+            link_dir.symlink_to(target_dir)
+        except OSError:
+            pytest.skip("Symbolic links not supported on this system")
+        
+        # Remove the target to break the symlink
+        target_dir.rmdir()
+        
+        # Should raise FileNotFoundError
+        with pytest.raises(FileNotFoundError) as exc_info:
+            filesystem_module._validate_directory(str(link_dir))
+        assert 'Symlink target does not exist' in str(exc_info.value) or 'Broken symlink' in str(exc_info.value)
+    
+    def test_is_valid_broken_symlink(self, temp_dir):
+        """Test is_valid_directory with broken symlink."""
+        target_dir = Path(temp_dir) / 'target'
+        target_dir.mkdir()
+        
+        link_dir = Path(temp_dir) / 'link'
+        try:
+            link_dir.symlink_to(target_dir)
+        except OSError:
+            pytest.skip("Symbolic links not supported on this system")
+        
+        # Remove the target to break the symlink
+        target_dir.rmdir()
+        
+        is_valid, error = filesystem_module.is_valid_directory(str(link_dir))
+        assert is_valid is False
+        assert 'Symlink target does not exist' in error or 'Broken symlink' in error
+    
+    def test_symlink_to_file_raises_error(self, temp_dir):
+        """Test that symlink to a file raises NotADirectoryError."""
+        target_file = Path(temp_dir) / 'target.txt'
+        target_file.write_text('content')
+        
+        link_path = Path(temp_dir) / 'link'
+        try:
+            link_path.symlink_to(target_file)
+        except OSError:
+            pytest.skip("Symbolic links not supported on this system")
+        
+        # Should raise NotADirectoryError
+        with pytest.raises(NotADirectoryError) as exc_info:
+            filesystem_module._validate_directory(str(link_path))
+        assert 'not a directory' in str(exc_info.value).lower()
+    
+    def test_is_valid_symlink_to_file(self, temp_dir):
+        """Test is_valid_directory with symlink to file."""
+        target_file = Path(temp_dir) / 'target.txt'
+        target_file.write_text('content')
+        
+        link_path = Path(temp_dir) / 'link'
+        try:
+            link_path.symlink_to(target_file)
+        except OSError:
+            pytest.skip("Symbolic links not supported on this system")
+        
+        is_valid, error = filesystem_module.is_valid_directory(str(link_path))
+        assert is_valid is False
+        assert 'not a directory' in error.lower()
+    
+    def test_symlink_to_nonexistent_path(self, temp_dir):
+        """Test symlink pointing to non-existent path."""
+        link_path = Path(temp_dir) / 'link'
+        non_existent = Path(temp_dir) / 'does_not_exist'
+        
+        try:
+            link_path.symlink_to(non_existent)
+        except OSError:
+            pytest.skip("Symbolic links not supported on this system")
+        
+        # Should raise FileNotFoundError
+        with pytest.raises(FileNotFoundError) as exc_info:
+            filesystem_module._validate_directory(str(link_path))
+        assert 'Symlink target does not exist' in str(exc_info.value) or 'Broken symlink' in str(exc_info.value)
+    
+    def test_nested_symlinks(self, temp_dir):
+        """Test symlinks pointing to other symlinks."""
+        target_dir = Path(temp_dir) / 'target'
+        target_dir.mkdir()
+        
+        link1 = Path(temp_dir) / 'link1'
+        link2 = Path(temp_dir) / 'link2'
+        
+        try:
+            link1.symlink_to(target_dir)
+            link2.symlink_to(link1)
+        except OSError:
+            pytest.skip("Symbolic links not supported on this system")
+        
+        # Should follow chain and validate successfully
+        filesystem_module._validate_directory(str(link2))
+        
+        is_valid, error = filesystem_module.is_valid_directory(str(link2))
+        assert is_valid is True
+        assert error == ''
+    
+    def test_circular_symlink_raises_error(self, temp_dir):
+        """Test circular symlink reference."""
+        link1 = Path(temp_dir) / 'link1'
+        link2 = Path(temp_dir) / 'link2'
+        
+        try:
+            link1.symlink_to(link2)
+            link2.symlink_to(link1)
+        except OSError:
+            pytest.skip("Symbolic links not supported on this system")
+        
+        # Should raise an error (FileNotFoundError or RuntimeError)
+        with pytest.raises(FileNotFoundError) as exc_info:
+            filesystem_module._validate_directory(str(link1))
+        assert 'Broken symlink' in str(exc_info.value) or 'circular' in str(exc_info.value).lower()
+    
+    def test_symlink_permissions(self, temp_dir):
+        """Test symlink pointing to directory without read permissions."""
+        target_dir = Path(temp_dir) / 'target'
+        target_dir.mkdir()
+        
+        link_dir = Path(temp_dir) / 'link'
+        try:
+            link_dir.symlink_to(target_dir)
+        except OSError:
+            pytest.skip("Symbolic links not supported on this system")
+        
+        # Remove read permissions from target
+        os.chmod(target_dir, 0o000)
+        
+        try:
+            with pytest.raises(PermissionError) as exc_info:
+                filesystem_module._validate_directory(str(link_dir))
+            assert 'Read permission denied' in str(exc_info.value)
+        finally:
+            # Restore permissions for cleanup
+            os.chmod(target_dir, 0o755)
+    
+    def test_count_files_through_symlink(self, temp_dir):
+        """Test counting files in a directory accessed via symlink."""
+        target_dir = Path(temp_dir) / 'target'
+        target_dir.mkdir()
+        (target_dir / 'file1.txt').write_text('content1')
+        (target_dir / 'file2.txt').write_text('content2')
+        (target_dir / 'file3.txt').write_text('content3')
+        
+        link_dir = Path(temp_dir) / 'link'
+        try:
+            link_dir.symlink_to(target_dir)
+        except OSError:
+            pytest.skip("Symbolic links not supported on this system")
+        
+        # Should count files through symlink
+        count = filesystem_module.get_file_counts(str(link_dir))
+        assert count == 3
+    
+    def test_symlink_absolute_path(self, temp_dir):
+        """Test symlink with absolute path target."""
+        target_dir = Path(temp_dir) / 'target'
+        target_dir.mkdir()
+        
+        link_dir = Path(temp_dir) / 'link'
+        try:
+            link_dir.symlink_to(target_dir.resolve())
+        except OSError:
+            pytest.skip("Symbolic links not supported on this system")
+        
+        is_valid, error = filesystem_module.is_valid_directory(str(link_dir))
+        assert is_valid is True
+        assert error == ''
+    
+    def test_symlink_relative_path(self, temp_dir):
+        """Test symlink with relative path target."""
+        target_dir = Path(temp_dir) / 'target'
+        target_dir.mkdir()
+        
+        # Create link in subdirectory with relative path
+        subdir = Path(temp_dir) / 'subdir'
+        subdir.mkdir()
+        link_dir = subdir / 'link'
+        
+        try:
+            link_dir.symlink_to('../target')
+        except OSError:
+            pytest.skip("Symbolic links not supported on this system")
+        
+        is_valid, error = filesystem_module.is_valid_directory(str(link_dir))
+        assert is_valid is True
+        assert error == ''
+    
+    def test_symlink_chain_with_broken_link(self, temp_dir):
+        """Test chain of symlinks where intermediate link is broken."""
+        target_dir = Path(temp_dir) / 'target'
+        target_dir.mkdir()
+        
+        link1 = Path(temp_dir) / 'link1'
+        link2 = Path(temp_dir) / 'link2'
+        
+        try:
+            link1.symlink_to(target_dir)
+            link2.symlink_to(link1)
+        except OSError:
+            pytest.skip("Symbolic links not supported on this system")
+        
+        # Remove target to break the chain
+        target_dir.rmdir()
+        
+        # Should detect broken chain
+        with pytest.raises(FileNotFoundError):
+            filesystem_module._validate_directory(str(link2))
+    
+    def test_count_excludes_broken_symlinks(self, temp_dir):
+        """Test that broken symlinks are excluded from file count."""
+        test_dir = Path(temp_dir) / 'mixed_links'
+        test_dir.mkdir()
+        
+        # Create regular files
+        (test_dir / 'regular1.txt').write_text('content1')
+        (test_dir / 'regular2.txt').write_text('content2')
+        
+        # Create valid symlink
+        target_dir = Path(temp_dir) / 'valid_target'
+        target_dir.mkdir()
+        valid_link = test_dir / 'valid_link'
+        
+        # Create broken symlink
+        broken_target = Path(temp_dir) / 'broken_target'
+        broken_target.mkdir()
+        broken_link = test_dir / 'broken_link'
+        
+        try:
+            valid_link.symlink_to(target_dir)
+            broken_link.symlink_to(broken_target)
+        except OSError:
+            pytest.skip("Symbolic links not supported on this system")
+        
+        # Remove target to break the symlink
+        broken_target.rmdir()
+        
+        # Count should exclude broken symlink
+        # Expected: 2 regular files + 1 valid symlink = 3
+        count = filesystem_module.get_file_counts(str(test_dir))
+        assert count == 3, f"Expected 3 (2 regular + 1 valid symlink), got {count}"
+    
+    def test_count_all_broken_symlinks(self, temp_dir):
+        """Test directory with only broken symlinks."""
+        test_dir = Path(temp_dir) / 'all_broken'
+        test_dir.mkdir()
+        
+        # Create multiple broken symlinks
+        for i in range(3):
+            target = Path(temp_dir) / f'missing_target_{i}'
+            link = test_dir / f'broken_link_{i}'
+            try:
+                link.symlink_to(target)
+            except OSError:
+                pytest.skip("Symbolic links not supported on this system")
+        
+        # All symlinks are broken, count should be 0
+        count = filesystem_module.get_file_counts(str(test_dir))
+        assert count == 0, f"Expected 0 (all broken symlinks), got {count}"
+    
+    def test_count_mixed_valid_and_broken_symlinks(self, temp_dir):
+        """Test counting with mix of valid files, valid symlinks, and broken symlinks."""
+        test_dir = Path(temp_dir) / 'complex_mix'
+        test_dir.mkdir()
+        
+        # Create regular files
+        (test_dir / 'file1.txt').write_text('content')
+        (test_dir / 'file2.txt').write_text('content')
+        
+        # Create regular subdirectory
+        (test_dir / 'subdir').mkdir()
+        
+        # Create valid symlinks
+        valid_target1 = Path(temp_dir) / 'valid1'
+        valid_target1.mkdir()
+        valid_link1 = test_dir / 'valid_link1'
+        
+        valid_target2 = Path(temp_dir) / 'valid2.txt'
+        valid_target2.write_text('content')
+        valid_link2 = test_dir / 'valid_link2'
+        
+        # Create broken symlinks
+        broken_target1 = Path(temp_dir) / 'broken1'
+        broken_target1.mkdir()
+        broken_link1 = test_dir / 'broken_link1'
+        
+        broken_target2 = Path(temp_dir) / 'broken2.txt'
+        broken_target2.write_text('content')
+        broken_link2 = test_dir / 'broken_link2'
+        
+        try:
+            valid_link1.symlink_to(valid_target1)
+            valid_link2.symlink_to(valid_target2)
+            broken_link1.symlink_to(broken_target1)
+            broken_link2.symlink_to(broken_target2)
+        except OSError:
+            pytest.skip("Symbolic links not supported on this system")
+        
+        # Break some symlinks
+        broken_target1.rmdir()
+        broken_target2.unlink()
+        
+        # Count: 2 regular files + 1 subdir + 2 valid symlinks = 5
+        count = filesystem_module.get_file_counts(str(test_dir))
+        assert count == 5, f"Expected 5 (2 files + 1 dir + 2 valid symlinks), got {count}"
+    
+    def test_count_circular_symlinks_excluded(self, temp_dir):
+        """Test that circular symlinks are excluded from count."""
+        test_dir = Path(temp_dir) / 'circular_test'
+        test_dir.mkdir()
+        
+        # Create regular file
+        (test_dir / 'regular.txt').write_text('content')
+        
+        # Create circular symlinks
+        link1 = test_dir / 'link1'
+        link2 = test_dir / 'link2'
+        
+        try:
+            link1.symlink_to(link2)
+            link2.symlink_to(link1)
+        except OSError:
+            pytest.skip("Symbolic links not supported on this system")
+        
+        # Count should exclude circular symlinks, only count regular file
+        count = filesystem_module.get_file_counts(str(test_dir))
+        assert count == 1, f"Expected 1 (1 regular file, circular symlinks excluded), got {count}"
+
