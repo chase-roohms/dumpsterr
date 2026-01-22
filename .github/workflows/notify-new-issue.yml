@@ -2,7 +2,7 @@ name: Notify on Issue Events
 
 on:
   issues:
-    types: [opened, edited]
+    types: [opened, closed, edited]
   issue_comment:
     types: [created]
 
