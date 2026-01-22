@@ -8,6 +8,7 @@ on:
 
 jobs:
   notify-new-issue:
+    if: github.actor != 'chase-roohms'
     runs-on: ubuntu-latest
     steps:
       - name: Get Embed
