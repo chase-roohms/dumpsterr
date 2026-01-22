@@ -1,0 +1,50 @@
+name: Notify of New Issue
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  notify-new-issue:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get Embed
+        id: get-embed
+        env:
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_STATE: ${{ github.event.issue.state }}
+          ISSUE_LABELS: ${{ toJson(github.event.issue.labels) }}
+        run: |
+          # Create individual field objects
+          FIELD_NUMBER=$(jq -nc --arg value "$ISSUE_NUMBER" \
+            '{"name":"#️⃣ Number","value":$value, "inline": true}')
+          FIELD_STATE=$(jq -nc --arg value "$ISSUE_STATE" \
+            '{"name":"📋 State","value":$value, "inline": true}')
+          FIELD_LABELS=$(jq -nc --argjson value "$ISSUE_LABELS" \
+            '{"name":"🏷️ Labels","value":($value | map(.name) | join(", ")), "inline": false}')
+          
+          # Combine all fields into array
+          FIELDS_JSON=$(jq -nc \
+                --argjson number "$FIELD_NUMBER" \
+                --argjson state "$FIELD_STATE" \
+                --argjson labels "$FIELD_LABELS" \
+                '[$number, $state, $labels]')
+          echo "fields_json=$FIELDS_JSON" >> $GITHUB_OUTPUT
+      
+      - name: Send Message to Discord
+        uses: chase-roohms/discord-notify@v1
+        with:
+          webhook_url: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          username: chase-roohms/dumpsterr
+          avatar_url: https://raw.githubusercontent.com/chase-roohms/dumpsterr/main/logo.png
+          embed-titles: "New Issue: ${{ github.event.issue.title }}"
+          embed-descriptions: |
+            Description: ${{ github.event.issue.body }}
+            URL: ${{ github.event.issue.html_url }}
+          embed-urls: ${{ github.event.issue.html_url }}
+          embed-colors: "#E5A00D"
+          embed-fields: ${{ steps.get-embed.outputs.fields_json }}
+          embed-authors: ${{ github.event.issue.user.login }}
+          embed-author-urls: ${{ github.event.issue.user.html_url }}
+          embed-author-icons: ${{ github.event.issue.user.avatar_url }}
+          embed-timestamps: ${{ github.event.issue.updated_at }} 
