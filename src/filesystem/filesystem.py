@@ -1,5 +1,8 @@
+import logging
 import os
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 def _validate_directory(path: str) -> None:
     """Ensure that the directory at the given path exists and is readable.
@@ -79,8 +82,9 @@ def get_file_counts(directory: str) -> int:
                 if item.resolve(strict=True).exists():
                     count += 1
                 # If resolve succeeds but target doesn't exist, skip it (broken symlink)
-            except (OSError, RuntimeError):
+            except (OSError, RuntimeError) as e:
                 # Broken symlink or circular reference - skip it
+                logger.debug(f"Skipping broken symlink: {item} ({e})")
                 pass
         else:
             # Regular file or directory - count it
