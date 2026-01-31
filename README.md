@@ -7,22 +7,9 @@
 Automated Plex trash management tool that validates filesystem state before emptying library trash. Prevents accidental deletion when using network-mounted storage.
 
 <picture>
-  <source
-    media="(prefers-color-scheme: dark)"
-    srcset="
-      https://api.star-history.com/svg?repos=chase-roohms/dumpsterr&type=Date&theme=dark
-    "
-  />
-  <source
-    media="(prefers-color-scheme: light)"
-    srcset="
-      https://api.star-history.com/svg?repos=chase-roohms/dumpsterr&type=Date
-    "
-  />
-  <img
-    alt="Star History Chart"
-    src="https://api.star-history.com/svg?repos=chase-roohms/dumpsterr&type=Date"
-  />
+  <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=chase-roohms/dumpsterr&type=Date&theme=dark"/>
+  <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=chase-roohms/dumpsterr&type=Date"/>
+  <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=chase-roohms/dumpsterr&type=Date" />
 </picture>
 
 # Quickstart
