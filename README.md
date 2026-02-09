@@ -1,4 +1,4 @@
-# Dumpsterr
+<h1><img src=images/logo-transparent.png height=25px></img> Dumpsterr</h1>
 
 [![Tests](https://github.com/chase-roohms/dumpsterr/workflows/Tests/badge.svg)](https://github.com/chase-roohms/dumpsterr/actions)
 [![codecov](https://codecov.io/gh/chase-roohms/dumpsterr/branch/main/graph/badge.svg)](https://codecov.io/gh/chase-roohms/dumpsterr)
