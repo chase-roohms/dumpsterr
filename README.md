@@ -200,8 +200,6 @@ Or in your .env file:
 CRON_SCHEDULE=0 */6 * * *  # Every 6 hours
 ```
 
-No container rebuild required - just restart the container after changing the environment variable.
-
 ## Validation Process
 
 1. Directory accessibility check
@@ -210,7 +208,7 @@ No container rebuild required - just restart the container after changing the en
 4. Threshold percentage validation (current files / expected files > minimum threshold)
 5. Trash emptying (only if all checks pass)
 
-Validation failure exits without emptying trash.
+Validation failure skips library without emptying trash.
 
 ## Logs
 
@@ -293,7 +291,7 @@ src/
 └── public/              # JSON schema for config validation
 ```
 
-## Dependencies
+## Dependencies (Included in Container)
 
 - PyYAML
 - jsonschema
@@ -356,8 +354,7 @@ The test suite includes:
 - **Plex Client Tests**: API mocking, error handling, retry logic
 - **Integration Tests**: Complete workflow testing with mocked dependencies
 
-View detailed testing documentation: [tests/README.md](tests/README.md)
+View detailed testing documentation: [docs/TESTS.md](docs/TESTS.md)
 
 ## License
-
-See LICENSE file.
+Dumpsterr is maintained under an MIT license, see the [LICENSE](LICENSE) file for details.
