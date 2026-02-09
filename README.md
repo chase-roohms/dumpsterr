@@ -21,13 +21,20 @@ docker compose up -d
 ```
 ## Problem
 
-When Plex runs on a different host than your media storage (NFS, SMB, etc.), network interruptions can cause mount failures. If Plex scans while mounts are down, it marks all media as deleted and removes them from your library. Re-mounting triggers a full rescan and metadata rebuild.
+When Plex runs on a different host than your media storage (NFS, SMB, etc.), network interruptions can cause mount failures or timeouts. If mounts go down mid Plex scan, some media is marked as deleted and the metadata is removed from your library. When mounts are fully available again a full rescan and metadata rebuild is triggered which fills your "Recently Added" with movies and shows you have had for months.
 
-Plex's "fix" for this is to disable "Empty trash automatically after every scan" - which then means you have to periodically empty your trash manually to avoid all the little red trash symbols on **intentionally deleted** media, and the scary red "unavailable" buttons on upgraded files.
+Examples of Reddit user's posts who faced this problem:
+- [grammargiraffe](https://www.reddit.com/r/PleX/comments/1fu74g3/plex_keeps_readding_a_massive_batch_of_movies/)
+- [morpheus2n2](https://www.reddit.com/r/PleX/comments/16k67ve/plex_keeps_randomly_readded_one_particular/)
+- [daxter304](https://www.reddit.com/r/PleX/comments/1jn8aj5/my_server_is_randomly_rediscovering_content/)
+- [EP9](https://www.reddit.com/r/PleX/comments/1k0ysn8/recently_added_movies_keep_resetting/)
+- [Ok-Button6101](https://www.reddit.com/r/PleX/comments/1cd9ymc/plex_just_randomly_readded_almost_all_of_my_movie/)
+
+The suggested "fix" for this is always to disable "Empty trash automatically after every scan" - which then means you have to periodically empty your trash manually to avoid all the little red trash symbols on **intentionally deleted** media, and the scary red "unavailable" buttons on upgraded files.
 
 ## Solution
 
-dumpsterr validates filesystem state before allowing Plex to empty trash:
+Dumpsterr validates filesystem state before allowing Plex to empty trash:
 - Checks directory accessibility
 - Verifies minimum file counts
 - Confirms file count thresholds are within an acceptable range: `if (files on disk / media in library) > minimum threshold in config`
@@ -242,7 +249,7 @@ Then `config.yml` must exist in the same directory as `docker-compose.yml` befor
 
 If your media library contains symlinks (e.g., symlinks pointing to an rclone mount), **both the symlink source and target directories must be mounted** in the container.
 
-**How it works**: dumpsterr follows symlinks to their target paths and validates that the target files exist. If symlinks point to unmounted paths, they're detected as broken, causing validation to fail (which prevents trash emptying when your mount is down ✅).
+**How it works**: Dumpsterr follows symlinks to their target paths and validates that the target files exist. If symlinks point to unmounted paths, they're detected as broken, causing validation to fail (which prevents trash emptying when your mount is down ✅).
 
 **Example Configuration**:
 ```yaml
@@ -272,7 +279,7 @@ Check that:
 Disable "Empty trash automatically after every scan" in:
 - Settings > Library
 
-This lets dumpsterr control trash emptying on its schedule.
+This lets Dumpsterr control trash emptying on its schedule.
 
 ## Project Structure
 
@@ -293,7 +300,7 @@ src/
 
 ## Development & Testing
 
-dumpsterr includes a comprehensive test suite covering all modules.
+Dumpsterr includes a comprehensive test suite covering all modules.
 
 ### Installing Development Dependencies
 
