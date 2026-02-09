@@ -21,7 +21,7 @@ docker compose up -d
 ```
 ## Problem
 
-When Plex runs on a different host than your media storage (NFS, SMB, etc.), network interruptions can cause mount failures or timeouts. If mounts go down mid Plex scan, some media is marked as deleted and the metadata is removed from your library. When mounts are fully available again a full rescan and metadata rebuild is triggered which fills your "Recently Added" with movies and shows you have had for months.
+When Plex runs on a different host than your media storage (NFS, SMB, etc.), network interruptions can cause mount failures or timeouts. If mounts go down mid Plex scan, some media is marked as deleted and the metadata is removed from your library. When mounts are fully available again a rescan and metadata rebuild is triggered which fills your "Recently Added" with movies and shows you have had for months.
 
 Examples of Reddit user's posts who faced this problem:
 - [grammargiraffe](https://www.reddit.com/r/PleX/comments/1fu74g3/plex_keeps_readding_a_massive_batch_of_movies/)
