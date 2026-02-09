@@ -64,7 +64,7 @@ jobs:
         with:
           webhook_url: ${{ secrets.DISCORD_WEBHOOK_URL }}
           username: chase-roohms/dumpsterr
-          avatar_url: https://raw.githubusercontent.com/chase-roohms/dumpsterr/main/logo.png
+          avatar_url: https://raw.githubusercontent.com/chase-roohms/dumpsterr/main/images/logo.png
           embed-titles: "Issue: ${{ github.event.issue.title }}"
           embed-descriptions: ${{ github.event.issue.body }}
           embed-urls: ${{ github.event.issue.html_url }}
