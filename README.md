@@ -4,7 +4,7 @@
 [![codecov](https://codecov.io/gh/chase-roohms/dumpsterr/branch/main/graph/badge.svg)](https://codecov.io/gh/chase-roohms/dumpsterr)
 [![Python](https://img.shields.io/badge/python-3.12%2B-blue)](https://www.python.org/downloads/)
 
-Automated Plex trash management tool that validates filesystem state before emptying library trash. Prevents accidental deletion when using network-mounted storage.
+Automated Plex trash management tool that validates filesystem state before emptying library trash. Prevents accidental deletion when using network-mounted storage or other unreliable forms of storage.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=chase-roohms/dumpsterr&type=Date&theme=dark"/>
