@@ -1,4 +1,4 @@
-# dumpsterr
+# Dumpsterr
 
 [![Tests](https://github.com/chase-roohms/dumpsterr/workflows/Tests/badge.svg)](https://github.com/chase-roohms/dumpsterr/actions)
 [![codecov](https://codecov.io/gh/chase-roohms/dumpsterr/branch/main/graph/badge.svg)](https://codecov.io/gh/chase-roohms/dumpsterr)
