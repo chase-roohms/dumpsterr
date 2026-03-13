@@ -12,7 +12,7 @@ Two log formats are supported:
 
 #### Standard Format (Default)
 ```
-2026-01-20 10:30:15 - INFO - All validation checks passed for library "Movies"
+2026-01-20 10:30:15 - INFO - main - All validation checks passed for library "Movies"
 ```
 
 #### JSON Format (Structured Logging)
@@ -35,6 +35,17 @@ Set log format via environment variable:
 environment:
   - LOG_FORMAT=json  # or 'standard' (default)
 ```
+
+`LOG_FORMAT` is case-insensitive. Invalid values fall back to `standard`.
+
+Configure the application log level in `config.yml`:
+
+```yaml
+settings:
+  log_level: INFO
+```
+
+`log_level` is case-insensitive. Invalid values fall back to `INFO`.
 
 ### Docker Log Management
 

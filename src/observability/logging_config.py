@@ -9,6 +9,26 @@ from pathlib import Path
 from typing import Optional
 
 
+VALID_LOG_FORMATS = {'standard', 'json'}
+
+
+def _normalize_log_level(log_level: str) -> tuple[int, bool]:
+    """Normalize a log level string and report whether it was valid."""
+    normalized_level = str(log_level).strip().upper()
+    level_value = logging.getLevelName(normalized_level)
+    if isinstance(level_value, int):
+        return level_value, True
+    return logging.INFO, False
+
+
+def _normalize_log_format(log_format: str) -> tuple[str, bool]:
+    """Normalize a log format string and report whether it was valid."""
+    normalized_format = str(log_format).strip().lower()
+    if normalized_format in VALID_LOG_FORMATS:
+        return normalized_format, True
+    return 'standard', False
+
+
 class StructuredFormatter(logging.Formatter):
     """JSON formatter for structured logging."""
     
@@ -64,17 +84,20 @@ def setup_logging(
     """
     # Get root logger
     logger = logging.getLogger()
-    logger.setLevel(getattr(logging, log_level.upper()))
+    normalized_level, is_valid_level = _normalize_log_level(log_level)
+    normalized_format, is_valid_format = _normalize_log_format(log_format)
+
+    logger.setLevel(normalized_level)
     
     # Remove existing handlers
     logger.handlers.clear()
     
     # Choose formatter
-    if log_format == 'json':
+    if normalized_format == 'json':
         formatter = StructuredFormatter()
     else:
         formatter = logging.Formatter(
-            '%(asctime)s - %(levelname)s - %(message)s',
+            '%(asctime)s - %(levelname)s - %(name)s - %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S'
         )
     
@@ -96,5 +119,10 @@ def setup_logging(
         )
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
+
+    if not is_valid_level:
+        logger.warning('Invalid log level "%s" provided. Falling back to INFO.', log_level)
+    if not is_valid_format:
+        logger.warning('Invalid log format "%s" provided. Falling back to standard.', log_format)
     
     return logger

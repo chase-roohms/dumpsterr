@@ -122,6 +122,25 @@ class TestSetupLogging:
         # Verify JSON formatter is used
         handler = logger.handlers[0]
         assert isinstance(handler.formatter, StructuredFormatter)
+
+    def test_setup_logging_normalizes_case_and_whitespace(self):
+        """Test logging setup accepts case and whitespace variations."""
+        logger = setup_logging(log_level=' debug ', log_format=' JSON ')
+
+        assert logger.level == logging.DEBUG
+        handler = logger.handlers[0]
+        assert isinstance(handler.formatter, StructuredFormatter)
+
+    def test_setup_logging_invalid_inputs_fall_back_with_warning(self, capsys):
+        """Test invalid logging options fall back to safe defaults."""
+        logger = setup_logging(log_level='verbose', log_format='pretty')
+        captured = capsys.readouterr()
+
+        assert logger.level == logging.INFO
+        handler = logger.handlers[0]
+        assert not isinstance(handler.formatter, StructuredFormatter)
+        assert 'Invalid log level "verbose" provided. Falling back to INFO.' in captured.out
+        assert 'Invalid log format "pretty" provided. Falling back to standard.' in captured.out
     
     def test_setup_with_log_file(self, temp_dir):
         """Test logging setup with file output."""

@@ -84,7 +84,7 @@ Required:
 Optional:
 - `TZ` - Timezone (e.g., `America/New_York`)
 - `CRON_SCHEDULE` - Cron schedule (default: `0 * * * *` - hourly)
-- `LOG_FORMAT` - Log format: `standard` or `json` (default: `standard`)
+- `LOG_FORMAT` - Log format: `standard` or `json` (default: `standard`, case-insensitive)
 - `LOG_FILE` - Optional file path for log rotation (e.g., `/app/logs/dumpsterr.log`)
 
 **Note**: Metrics collection is automatic but optional. Mount `/app/metrics` to persist metrics history.
@@ -163,6 +163,8 @@ See [docs/OBSERVABILITY.md](docs/OBSERVABILITY.md) for details.
 Two formats available:
 - **Standard** (default): Human-readable
 - **JSON**: Structured for log aggregation
+
+`settings.log_level` and `LOG_FORMAT` are case-insensitive. Invalid values fall back to `INFO` and `standard`.
 
 Configure log rotation via Docker logging driver (recommended) or file-based rotation.
 
