@@ -64,6 +64,33 @@ class PlexClient:
                 f"Failed to retrieve library sections: {e}"
             ) from e
     
+    def is_library_section_refreshing(self, section_key):
+        """Check if a specific library section is currently refreshing.
+        
+        Args:
+            section_key: The key identifier for the library section.
+        
+        Returns:
+            bool: True if the section is refreshing, False otherwise.
+            
+        Raises:
+            requests.exceptions.RequestException: If the HTTP request fails.
+        """
+        url = f"{self.base_url}/library/sections"
+        try:
+            response = self.session.get(url, headers=self.headers, timeout=self.timeout)
+            response.raise_for_status()
+            directories = response.json().get('MediaContainer', {}).get('Directory', [])
+            directory = next((d for d in directories if d['key'] == section_key), None)
+            if directory is None:
+                raise ValueError(f"Library section with key {section_key} not found")
+            return directory.get('refreshing', None)
+        except requests.exceptions.RequestException as e:
+            raise requests.exceptions.RequestException(
+                f"Failed to check if library section {section_key} is refreshing: {e}"
+            ) from e
+
+
     def get_library_size(self, section_key):
         """Get the size of a specific library section.
         

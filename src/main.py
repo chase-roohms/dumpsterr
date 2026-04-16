@@ -126,18 +126,21 @@ def process_library(plex: plex_client.PlexClient, library: dict, logger: logging
         logger.error(f'File count thresholds for library "{library["name"]}" are not met (actual {actual_percentage:.2f}%, minimum {min_threshold}%).')
         return False
     logger.info(f'File count thresholds for library "{library["name"]}" are met (actual {actual_percentage:.2f}%, minimum {min_threshold}%).')
-    logger.info(f'All validation checks passed for library "{library["name"]}". Emptying trash...')
     section_name = library['name']
     section_key = library['section_key']
-    if section_key:
-        success = plex.empty_section_trash(section_key)
-        if success:
-            logger.info(f'Successfully emptied trash for section "{section_name}".')
-        else:
-            logger.error(f'Failed to empty trash for section "{section_name}".')
-            return False
-    else:
+    if not section_key:
         logger.error(f'Section "{section_name}" not found in Plex library sections.')
+        return False
+    is_refreshing = plex.is_library_section_refreshing(section_key)
+    if is_refreshing:
+        logger.warning(f'Section "{section_name}" is currently refreshing. Skipping trash emptying.')
+        return False
+    logger.info(f'All validation checks passed for library "{library["name"]}". Emptying trash...')
+    success = plex.empty_section_trash(section_key)
+    if success:
+        logger.info(f'Successfully emptied trash for section "{section_name}".')
+    else:
+        logger.error(f'Failed to empty trash for section "{section_name}".')
         return False
     return True # Successfully processed library
 

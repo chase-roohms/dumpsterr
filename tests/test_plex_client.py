@@ -272,6 +272,81 @@ class TestGetLibrarySize:
         assert size2 == 200
 
 
+class TestIsLibrarySectionRefreshing:
+    """Tests for is_library_section_refreshing method."""
+
+    @responses.activate
+    def test_is_library_section_refreshing_true(self):
+        """Test section refreshing state when Plex reports true."""
+        responses.add(
+            responses.GET,
+            'http://localhost:32400/library/sections',
+            json={
+                'MediaContainer': {
+                    'Directory': [
+                        {'title': 'Movies', 'key': '1', 'refreshing': True}
+                    ]
+                }
+            },
+            status=200
+        )
+
+        client = plex_module.PlexClient('http://localhost:32400', 'test_token')
+        result = client.is_library_section_refreshing('1')
+
+        assert result is True
+
+    @responses.activate
+    def test_is_library_section_refreshing_false(self):
+        """Test section refreshing state when Plex reports false."""
+        responses.add(
+            responses.GET,
+            'http://localhost:32400/library/sections',
+            json={
+                'MediaContainer': {
+                    'Directory': [
+                        {'title': 'Movies', 'key': '1', 'refreshing': False}
+                    ]
+                }
+            },
+            status=200
+        )
+
+        client = plex_module.PlexClient('http://localhost:32400', 'test_token')
+        result = client.is_library_section_refreshing('1')
+
+        assert result is False
+
+    @responses.activate
+    def test_is_library_section_refreshing_missing_section(self):
+        """Test missing section raises ValueError."""
+        responses.add(
+            responses.GET,
+            'http://localhost:32400/library/sections',
+            json={'MediaContainer': {'Directory': []}},
+            status=200
+        )
+
+        client = plex_module.PlexClient('http://localhost:32400', 'test_token')
+        with pytest.raises(ValueError) as exc_info:
+            client.is_library_section_refreshing('1')
+        assert 'Library section with key 1 not found' in str(exc_info.value)
+
+    @responses.activate
+    def test_is_library_section_refreshing_http_error(self):
+        """Test HTTP errors are wrapped."""
+        responses.add(
+            responses.GET,
+            'http://localhost:32400/library/sections',
+            status=500
+        )
+
+        client = plex_module.PlexClient('http://localhost:32400', 'test_token')
+        with pytest.raises(requests.exceptions.RequestException) as exc_info:
+            client.is_library_section_refreshing('1')
+        assert 'Failed to check if library section 1 is refreshing' in str(exc_info.value)
+
+
 class TestEmptySectionTrash:
     """Tests for empty_section_trash method."""
     

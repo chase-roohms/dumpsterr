@@ -254,6 +254,7 @@ class TestProcessLibrary:
     def test_process_library_successful(self, test_files_dir):
         """Test successfully processing library."""
         mock_plex = Mock()
+        mock_plex.is_library_section_refreshing.return_value = False
         mock_plex.empty_section_trash.return_value = True
         
         library = {
@@ -269,11 +270,35 @@ class TestProcessLibrary:
         
         result = main_module.process_library(mock_plex, library, logger)
         assert result is True
+        mock_plex.is_library_section_refreshing.assert_called_once_with('1')
         mock_plex.empty_section_trash.assert_called_once_with('1')
+
+    def test_process_library_refreshing_skips_empty_trash(self, test_files_dir):
+        """Test that refreshing sections skip trash emptying."""
+        mock_plex = Mock()
+        mock_plex.is_library_section_refreshing.return_value = True
+
+        library = {
+            'name': 'Movies',
+            'path': [test_files_dir],
+            'file_count': 95,
+            'media_count': 100,
+            'min_files': 0,
+            'min_threshold': 90,
+            'section_key': '1'
+        }
+        logger = logging.getLogger('test')
+
+        result = main_module.process_library(mock_plex, library, logger)
+
+        assert result is False
+        mock_plex.is_library_section_refreshing.assert_called_once_with('1')
+        mock_plex.empty_section_trash.assert_not_called()
     
     def test_process_library_empty_trash_fails(self, test_files_dir):
         """Test when emptying trash fails."""
         mock_plex = Mock()
+        mock_plex.is_library_section_refreshing.return_value = False
         mock_plex.empty_section_trash.return_value = False
         
         library = {
@@ -310,6 +335,7 @@ class TestProcessLibrary:
     def test_process_library_default_values(self, test_files_dir):
         """Test processing library with default min_files and min_threshold."""
         mock_plex = Mock()
+        mock_plex.is_library_section_refreshing.return_value = False
         mock_plex.empty_section_trash.return_value = True
         
         library = {
@@ -359,6 +385,7 @@ class TestMain:
         mock_plex = Mock()
         mock_plex.get_library_sections.return_value = {'Movies': '1'}
         mock_plex.get_library_size.return_value = 100
+        mock_plex.is_library_section_refreshing.return_value = False
         mock_plex.empty_section_trash.return_value = True
         mock_plex_class.return_value = mock_plex
         
@@ -391,6 +418,7 @@ class TestMain:
             'TV Shows': '2'
         }
         mock_plex.get_library_size.side_effect = [100, 200]
+        mock_plex.is_library_section_refreshing.side_effect = [False, False]
         # First library succeeds, second fails
         mock_plex.empty_section_trash.side_effect = [True, False]
         mock_plex_class.return_value = mock_plex
@@ -426,6 +454,7 @@ class TestMain:
         mock_plex = Mock()
         mock_plex.get_library_sections.return_value = {'Movies': '1'}
         mock_plex.get_library_size.return_value = 100
+        mock_plex.is_library_section_refreshing.return_value = False
         # Empty trash fails
         mock_plex.empty_section_trash.return_value = False
         mock_plex_class.return_value = mock_plex
@@ -455,6 +484,7 @@ class TestMain:
         mock_plex = Mock()
         mock_plex.get_library_sections.return_value = {'Movies': '1'}
         mock_plex.get_library_size.return_value = 100
+        mock_plex.is_library_section_refreshing.return_value = False
         mock_plex.empty_section_trash.return_value = True
         mock_plex_class.return_value = mock_plex
         
@@ -483,6 +513,7 @@ class TestMain:
         mock_plex = Mock()
         mock_plex.get_library_sections.return_value = {'Movies': '1'}
         mock_plex.get_library_size.return_value = 100
+        mock_plex.is_library_section_refreshing.return_value = False
         mock_plex.empty_section_trash.return_value = True
         mock_plex_class.return_value = mock_plex
         
@@ -513,6 +544,7 @@ class TestMain:
         mock_plex = Mock()
         mock_plex.get_library_sections.return_value = {'Movies': '1'}
         mock_plex.get_library_size.return_value = 100
+        mock_plex.is_library_section_refreshing.return_value = False
         mock_plex.empty_section_trash.return_value = True
         mock_plex_class.return_value = mock_plex
         
@@ -532,6 +564,36 @@ class TestMain:
         
         assert exit_code == 0
 
+    @patch('main.plex_client.PlexClient')
+    def test_main_refreshing_library_skips_empty_trash(self, mock_plex_class, test_files_dir, monkeypatch):
+        """Test main marks a refreshing library as failed without emptying trash."""
+        monkeypatch.setenv('PLEX_URL', 'http://localhost:32400')
+        monkeypatch.setenv('PLEX_TOKEN', 'test_token')
+
+        mock_plex = Mock()
+        mock_plex.get_library_sections.return_value = {'Movies': '1'}
+        mock_plex.get_library_size.return_value = 100
+        mock_plex.is_library_section_refreshing.return_value = True
+        mock_plex_class.return_value = mock_plex
+
+        config_data = {
+            'libraries': [
+                {
+                    'name': 'Movies',
+                    'path': test_files_dir,
+                    'min_files': 0,
+                    'min_threshold': 0
+                }
+            ]
+        }
+
+        logger = logging.getLogger('test')
+        exit_code = main_module.main(config_data, logger)
+
+        assert exit_code == 2
+        mock_plex.is_library_section_refreshing.assert_called_once_with('1')
+        mock_plex.empty_section_trash.assert_not_called()
+
 
 class TestMainIntegration:
     """Integration tests for the main module workflow."""
@@ -549,6 +611,7 @@ class TestMainIntegration:
             'TV Shows': '2'
         }
         mock_plex.get_library_size.side_effect = [1000, 500]
+        mock_plex.is_library_section_refreshing.side_effect = [False, False]
         mock_plex.empty_section_trash.return_value = True
         mock_plex_class.return_value = mock_plex
         
@@ -583,6 +646,7 @@ class TestMainIntegration:
         # Verify Plex client was called correctly
         mock_plex.get_library_sections.assert_called_once()
         assert mock_plex.get_library_size.call_count == 2
+        assert mock_plex.is_library_section_refreshing.call_count == 2
         assert mock_plex.empty_section_trash.call_count == 2
 
 
@@ -598,6 +662,7 @@ class TestMainWithMetrics:
         mock_plex = Mock()
         mock_plex.get_library_sections.return_value = {'Movies': '1'}
         mock_plex.get_library_size.return_value = 100
+        mock_plex.is_library_section_refreshing.return_value = False
         mock_plex.empty_section_trash.return_value = True
         mock_plex_class.return_value = mock_plex
         
@@ -641,6 +706,7 @@ class TestMainWithMetrics:
         mock_plex = Mock()
         mock_plex.get_library_sections.return_value = {'Movies': '1', 'TV Shows': '2'}
         mock_plex.get_library_size.side_effect = [100, 100]
+        mock_plex.is_library_section_refreshing.side_effect = [False, False]
         # First succeeds, second fails
         mock_plex.empty_section_trash.side_effect = [True, False]
         mock_plex_class.return_value = mock_plex
@@ -687,9 +753,10 @@ class TestMainWithMetrics:
         mock_plex = Mock()
         mock_plex.get_library_sections.return_value = {'Movies': '1'}
         mock_plex.get_library_size.return_value = 100
+        mock_plex.is_library_section_refreshing.return_value = False
         mock_plex.empty_section_trash.return_value = False
         mock_plex_class.return_value = mock_plex
-        
+
         config_data = {
             'libraries': [
                 {
