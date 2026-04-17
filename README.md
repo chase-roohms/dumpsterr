@@ -33,6 +33,7 @@ Dumpsterr validates filesystem state before allowing Plex to empty trash:
 - Verifies minimum file counts
 - Follows symlinks (see [details](#using-symlinked-media-libraries))
 - Confirms file count thresholds are within an acceptable range: `if (files on disk / media in library) > minimum threshold in config`
+- Verifies the library is not currently being scanned
 - Only empties trash when **all** validations pass for a library
 
 ## Requirements
